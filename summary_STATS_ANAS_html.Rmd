@@ -1770,6 +1770,139 @@ Per quanto riguarda la direzione verso *Avellino*, sulla *Corsia 3*, il tempo ma
 *<br/><br/>*
 
 
+
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5, fig.cap ="**Figura 12x.** Tempo di occupazione delle **auto** e degli **autotreni** per corsia di marcia sul tratto dell'autostrada A2 (km5+004) direzione Salerno."}
+
+
+DB_2017[(nrow(DB_2017)-8): nrow(DB_2017), ][names(DB_2017) == 'occupazione__sec__auto'] <- 0
+DB_2017[(nrow(DB_2017)-8): nrow(DB_2017), ][names(DB_2017) == 'occupazione__sec__autotreni'] <- 0
+DB_2017[(nrow(DB_2017)-8): nrow(DB_2017), ][names(DB_2017) == 'occupazione__sec__articolati'] <- 0
+DB_2017[(nrow(DB_2017)-8): nrow(DB_2017), ][names(DB_2017) == 'occupazione__sec__furgoni'] <- 0
+
+
+# get first 8 lines of DB_2018 and set them to 0  (4*2, ASCEDNDENTI & DISCENDENTI)
+DB_2018[1:8, ][names(DB_2018) == 'occupazione__sec__auto'] <- 0
+DB_2018[1:8, ][names(DB_2018) == 'occupazione__sec__autotreni'] <- 0
+DB_2018[1:8, ][names(DB_2018) == 'occupazione__sec__articolati'] <- 0
+DB_2018[1:8, ][names(DB_2018) == 'occupazione__sec__furgoni'] <- 0
+
+# Bind and perform data cleaning
+DB <- rbind(DB_2017, DB_2018)
+
+headers <- names(DB)
+headers <- str_replace_all(headers, "\\.|\\(|\\)", "_")
+headers <- make.names(headers, unique = TRUE)
+headers <- str_replace_all(headers, "\\.", "_")
+headers <- str_to_lower(headers)
+
+# Give table headers
+names(DB) <- headers
+
+# format DateTime
+DB$riferimento_temporale <- lubridate::dmy_hms(DB$riferimento_temporale, tz = "UTC")
+DB$fine_periodo_di_aggregazione <- lubridate::dmy_hms(DB$fine_periodo_di_aggregazione, tz = "UTC")
+
+DB1 <- DB %>%
+  filter(direzione == "A" & corsia %in% c("1","2"))
+DB2 <- DB %>%
+  filter(direzione == "D" & corsia %in% c("3","4"))
+DB <- rbind(DB1, DB2)
+
+
+#########################################
+## Quick dynamic time series ############
+#########################################
+
+## A2 Direzione Salerno (Ascendente)
+
+names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
+
+# put to 0 one particular date 
+idx_to_remove <- which(DB$date == as_datetime("2018-08-14 17:00:00 UTC"))
+DB$occupazione__sec__auto[idx_to_remove] <- 0
+DB$occupazione__sec__autotreni[idx_to_remove] <- 0
+
+Corsia_1A_auto <- DB %>%
+  select(date,
+         corsia,
+         direzione,
+         occupazione__sec__auto) %>%
+  filter(corsia == 1 & direzione == "A")
+names(Corsia_1A_auto)[names(Corsia_1A_auto) == 'occupazione__sec__auto'] <- 'occupazione_auto_corsia_1_ASC'
+
+Corsia_1A_autotreni <- DB %>%
+  select(date,
+         corsia,
+         direzione,
+         occupazione__sec__autotreni) %>%
+  filter(corsia == 1 & direzione == "A")
+names(Corsia_1A_autotreni)[names(Corsia_1A_autotreni) == 'occupazione__sec__autotreni'] <- 'occupazione_autotreni_corsia_1_ASC'
+
+
+Corsia_2A_auto <- DB %>%
+  select(date,
+         corsia,
+         direzione,
+         occupazione__sec__auto) %>%
+  filter(corsia == 2 & direzione == "A")
+names(Corsia_2A_auto)[names(Corsia_2A_auto) == 'occupazione__sec__auto'] <- 'occupazione_auto_corsia_2_ASC'
+
+Corsia_2A_autotreni <- DB %>%
+  select(date,
+         corsia,
+         direzione,
+         occupazione__sec__autotreni) %>%
+  filter(corsia == 2 & direzione == "A")
+names(Corsia_2A_autotreni)[names(Corsia_2A_autotreni) == 'occupazione__sec__autotreni'] <- 'occupazione_autotreni_corsia_2_ASC'
+
+
+# join all data together
+All_Corsie_ASCENDENTI <- Corsia_1A_auto %>%
+  left_join(Corsia_2A_auto, by = "date")
+All_Corsie_ASCENDENTI <- All_Corsie_ASCENDENTI %>%
+   left_join(Corsia_1A_autotreni, by = "date")
+All_Corsie_ASCENDENTI <- All_Corsie_ASCENDENTI %>%
+   left_join(Corsia_2A_autotreni, by = "date")
+
+
+# Build timeseries for plots
+ts_AUTO_occupazione <- data_frame_to_timeseries(All_Corsie_ASCENDENTI %>%
+                                               select(date,
+                                                      occupazione_auto_corsia_1_ASC,
+                                                      occupazione_auto_corsia_2_ASC,
+                                                      occupazione_autotreni_corsia_1_ASC,
+                                                      occupazione_autotreni_corsia_2_ASC))
+  
+ts <- cbind(ts_AUTO_occupazione$occupazione_auto_corsia_1_ASC, 
+            ts_AUTO_occupazione$occupazione_auto_corsia_2_ASC,
+            ts_AUTO_occupazione$occupazione_autotreni_corsia_1_ASC,
+            ts_AUTO_occupazione$occupazione_autotreni_corsia_2_ASC)
+
+names(ts) <- c("occupazione_auto_corsia_1_ASC",
+                "occupazione_auto_corsia_2_ASC",
+               "occupazione_autotreni_corsia_1_ASC",
+               "occupazione_autotreni_corsia_2_ASC")
+    
+
+
+plot <- dygraph(ts, main = "A2 (Km 5+004) direzione Salerno (tempo di occupazione per auto e autotreni)")  %>% 
+    dygraphs::dySeries("occupazione_auto_corsia_1_ASC",label = "corsia 1 (auto)", color = "red") %>%
+    dygraphs::dySeries("occupazione_auto_corsia_2_ASC",label = "corsia 2 (auto)", color = "blue") %>%
+      dygraphs::dySeries("occupazione_autotreni_corsia_1_ASC",label = "corsia 1 (autotreni)", color = "black") %>%
+    dygraphs::dySeries("occupazione_autotreni_corsia_2_ASC",label = "corsia 2 (autotreni)", color = "orange") %>%
+    dyAxis("y", label = "occupazione (sec)") %>% 
+    dyOptions(useDataTimezone = TRUE) %>% # do not use the local time zone
+    dyRangeSelector()
+plot
+
+```
+
+*<br/><br/>*
+
+
+
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=6,  fig.cap ="**Figura 12.** Massimo tempo di occupazione per classe di autoveicoli e per corsia di marcia sul tratto dell'autostrada A2 (km5+004)."}
 
 ########################
