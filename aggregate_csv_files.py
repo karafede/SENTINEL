@@ -67,6 +67,233 @@ viasat_filenames = ['VST_ENEA_SA_FCD_2017.csv',    # 83206797 lines
 # cur_HAIG.execute("DROP TABLE IF EXISTS dataraw CASCADE")
 # conn_HAIG.commit()
 
+
+## loop over all the .csv file with the raw VIASAT data
+for csv_file in viasat_filenames:
+# csv_file = viasat_filenames[2]
+    file = open(csv_file)
+    reader = csv.reader(file)
+    ## get length of the csv file
+    lines = len(list(reader))
+    print(lines)
+
+    slice = 100000  # slice of data to be insert into the DB during the loop
+    ## calculate the neccessary number of iteration to carry out in order to upload all data into the DB
+    iter = int(round(lines/slice, ndigits=0)) +1
+    for i in range(0, iter):
+        print(i)
+        print(i, csv_file)
+        # csv_file = viasat_filenames[0]
+        df = pd.read_csv(csv_file, header=None ,delimiter=';', skiprows=i*slice ,nrows=slice)
+        ## define colum names
+        df.columns = ['idrequest', 'idterm', 'timedate', 'latitude', 'longitude',
+                      'speed', 'direction', 'grade', 'panel', 'event', 'vehtype',
+                      'progressive', 'millisec', 'timedate_gps', 'distance']
+        # df['id'] = pd.Series(range(i * slice, i * slice + slice))
+        df['timedate'] = df['timedate'].astype('datetime64[ns]')
+        df['timedate_gps'] = df['timedate_gps'].astype('datetime64[ns]')
+        ## upload into the DB
+        df.to_sql("dataraw", con=connection, schema="public",
+                                       if_exists='append', index = False)
+
+
+'''
+
+## drop one column
+cur_HAIG.execute("""
+ALTER TABLE "dataraw" DROP "id"
+     """)
+conn_HAIG.commit()
+
+
+## create a consecutive ID for each row
+cur_HAIG.execute("""
+alter table "dataraw" add id serial
+     """)
+conn_HAIG.commit()
+
+
+## add geometry WGS84 4286 (Salerno, Italy)
+cur_HAIG.execute("""
+alter table dataraw add column geom geometry(POINT,4326)
+""")
+
+cur_HAIG.execute("""
+update dataraw set geom = st_setsrid(st_point(longitude,latitude),4326)
+""")
+routecheck_2017
+
+conn_HAIG.commit()
+
+'''
+
+######################################################################
+## create an 'index only' to make faster queries in "dataraw" table ##
+######################################################################
+
+cur_HAIG.execute("""
+CREATE index dataraw_idterm_idx on public.dataraw(idterm);
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index dataraw_vehtype_idx on public.dataraw(vehtype);
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index dataraw_geom_idx on public.dataraw(geom);
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index dataraw_lat_idx on public.dataraw(latitude);
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index dataraw_lon_idx on public.dataraw(longitude);
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index dataraw_timedate_idx on public.dataraw(timedate);
+""")
+conn_HAIG.commit()
+
+conn_HAIG.close()
+cur_HAIG.close()
+
+
+##############################################################################
+## create an 'index only' to make faster queries in "routecheck_2017" table ##
+##############################################################################
+
+
+## add geometry WGS84 4286 (Salerno, Italy)
+cur_HAIG.execute("""
+alter table routecheck_2019 add column geom geometry(POINT,4326)
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+update routecheck_2019 set geom = st_setsrid(st_point(longitude,latitude),4326)
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_track_idx on public.routecheck_2017("track_ID");
+""")
+conn_HAIG.commit()
+
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_lat_idx on public.routecheck_2017(latitude);
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_lon_idx on public.routecheck_2017(longitude);
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_lat_idx on public.routecheck_2019(latitude);
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_lon_idx on public.routecheck_2019(longitude);
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_geom_idx on public.routecheck_2017(geom);
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_geom_idx on public.routecheck_2019(geom);
+""")
+conn_HAIG.commit()
+
+
+### create index on routecheck_2019
+cur_HAIG.execute("""
+CREATE index routecheck_2019_track_idx on public.routecheck_2019("track_ID");
+""")
+conn_HAIG.commit()
+
+##########################################################
+## Additional stuff ######################################
+##------------------######################################
+
+cur_HAIG.execute("""
+ALTER TABLE public.routecheck_2019
+  RENAME COLUMN "track_ID" TO idterm;
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+ALTER TABLE public.routecheck_2017 ALTER COLUMN "idterm" TYPE bigint USING "idterm" ::bigint
+""")
+conn_HAIG.commit()
+
+
+
+
+viasat_data = pd.read_sql_query('''
+              SELECT idterm, vehtype 
+              FROM public.dataraw 
+              LIMIT 100 ''', conn_HAIG)
+
+### get all terminals corresponding to 'fleet'
+viasat_data = pd.read_sql_query('''
+              SELECT idterm, vehtype 
+              FROM public.dataraw 
+              WHERE vehtype = 2 ''', conn_HAIG)
+# make an unique list
+idterms_fleet = list(viasat_data.idterm.unique())
+len(idterms_fleet)
+
+[2400053] in idterms_fleet
+
+## select only 'fleet' from the routecheck
+all_VIASAT_IDterminals = pd.read_sql_query(
+    ''' SELECT "idterm" 
+        FROM public.routecheck_2017
+        LIMIT 100''', conn_HAIG)
+
+all_ID_TRACKS = list(all_VIASAT_IDterminals.track_ID.unique())
+all_ID_TRACKS = [int(i) for i in all_ID_TRACKS]
+all_ID_TRACKS.append(2400053)
+
+# https://stackoverflow.com/questions/34288403/how-to-keep-elements-of-a-list-based-on-another-list
+idterms_fleet = set(idterms_fleet)
+all_ID_TRACKS_filtered = [x for x in all_ID_TRACKS if x in idterms_fleet]
+
+
+all_VIASAT_IDterminals = pd.read_sql_query(
+    ''' SELECT *
+        FROM public.routecheck_2019
+        WHERE "track_ID" = '2400053' ''', conn_HAIG)
+
+
+# >>> list1 = ['a','a','b','b','b','c','d','e','e','g','g']
+# >>> list2 = ['a','c','z','y']
+# >>> [x for x in list1 if x in list2]
+# ['a', 'a', 'c']
+
+
+
+
 '''
 # dateTime timestamp NOT NULL,
 cur_HAIG.execute("""
@@ -144,70 +371,6 @@ for csv_file in viasat_filenames:
     conn_HAIG.commit()
 '''
 
-## loop over all the .csv file with the raw VIASAT data
-for csv_file in viasat_filenames:
-# csv_file = viasat_filenames[0]
-    file = open(csv_file)
-    reader = csv.reader(file)
-    ## get length of the csv file
-    lines = len(list(reader))
-    print(lines)
-
-    slice = 100000  # slice of data to be insert into the DB during the loop
-    ## calculate the neccessary number of iteration to carry out in order to upload all data into the DB
-    iter = int(round(lines/slice, ndigits=0)) +1
-    for i in range(0, iter):
-        print(i)
-        print(i, csv_file)
-        # csv_file = viasat_filenames[0]
-        df = pd.read_csv(csv_file, header=None ,delimiter=';', skiprows=i*slice ,nrows=slice)
-        ## define colum names
-        df.columns = ['idrequest', 'idterm', 'timedate', 'latitude', 'longitude',
-                      'speed', 'direction', 'grade', 'panel', 'event', 'vehtype',
-                      'progressive', 'millisec', 'timedate_gps', 'distance']
-        df['id'] = pd.Series(range(i * slice, i * slice + slice))
-        df['timedate'] = df['timedate'].astype('datetime64[ns]')
-        df['timedate_gps'] = df['timedate_gps'].astype('datetime64[ns]')
-        ## upload into the DB
-        df.to_sql("dataraw", con=connection, schema="public",
-                                       if_exists='append', index = False)
-
-
-
-## add geometry WGS84 4286 (Catania, Italy)
-cur_HAIG.execute("""
-alter table dataraw add column geom geometry(POINT,4326)
-""")
-
-cur_HAIG.execute("""
-update dataraw set geom = st_setsrid(st_point(longitude,Latitude),4326)
-""")
-
-conn_HAIG.commit()
-
-
-## create a consecutive ID for each row
-cur_HAIG.execute("""
-alter table "prova_viasat_files_csv" add id serial
-     """)
-conn_HAIG.commit()
-
-
-## drop one column
-cur_HAIG.execute("""
-ALTER TABLE "prova_viasat_files_csv" DROP "idRequest"
-     """)
-conn_HAIG.commit()
-
-conn_HAIG.close()
-cur_HAIG.close()
-
-
-## check the "id"
-AAA = pd.read_sql_query('''
-                    SELECT id 
-                    FROM public.prova_viasat_files_csv''', conn_HAIG)
-
 
 '''
 ### rename the table in order to create a new one with columns in a different order
@@ -241,7 +404,6 @@ cur_HAIG.execute("""
 conn_HAIG.commit()
 
 
-
 # connect to new DB to be populated with Viasat data after route-check
 conn_HAIG = db_connect.connect_HAIG_Viasat_CT()
 cur_HAIG = conn_HAIG.cursor()
@@ -260,3 +422,67 @@ conn_HAIG.close()
 cur_HAIG.close()
 
 '''
+
+##########################################################
+### Check mapmatching DB #################################
+##########################################################
+
+
+conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
+cur_HAIG = conn_HAIG.cursor()
+
+#### check how many TRIP ID we have #############
+# get all ID terminal of Viasat data
+all_VIASAT_TRIP_IDs = pd.read_sql_query(
+    ''' SELECT "TRIP_ID" 
+        FROM public.mapmatching_2017 ''', conn_HAIG)
+
+# make a list of all unique trips
+all_TRIP_IDs = list(all_VIASAT_TRIP_IDs.TRIP_ID.unique())
+
+print(len(all_VIASAT_TRIP_IDs))
+print("trip number:", len(all_TRIP_IDs))
+
+## get all terminals (unique number of vehicles)
+idterm = list((all_VIASAT_TRIP_IDs.TRIP_ID.str.split('_', expand=True)[0]).unique())
+print("vehicle number:", len(idterm))
+
+
+## reload 'all_ID_TRACKS' as list
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2017.txt", "r") as file:
+    all_ID_TRACKS = eval(file.readline())
+print(len(all_ID_TRACKS))
+## make difference between all idterm and matched idterms
+all_ID_TRACKS_DIFF = list(set(all_ID_TRACKS) - set(idterm))
+print(len(all_ID_TRACKS_DIFF))
+# ## save 'all_ID_TRACKS' as list
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2017_new.txt", "w") as file:
+    file.write(str(all_ID_TRACKS_DIFF))
+
+
+###########################################################
+### get right geometry al linestring and plot data ########
+###########################################################
+viasat_data = pd.read_sql_query('''
+                        SELECT * 
+                        FROM public.mapmatching_2017 
+                        LIMIT 300000 ''', conn_HAIG)
+
+viasat_data = pd.read_sql_query('''
+                        SELECT * 
+                        FROM public.mapmatching_2017 
+                        WHERE "idtrajectory" = '75614866' ''', conn_HAIG)    ## vehtype = 2 (fleet)
+viasat_data = viasat_data.sort_values('sequenza')
+
+## transform Geometry from text to LINESTRING
+# wkb.loads(gdf_all_EDGES.geom, hex=True)
+from shapely import wkb
+import geopandas as gpd
+
+def wkb_tranformation(line):
+   return wkb.loads(line.geom, hex=True)
+
+viasat_data['geometry'] = viasat_data.apply(wkb_tranformation, axis=1)
+viasat_data.drop(['geom'], axis=1, inplace= True)
+viasat_data = gpd.GeoDataFrame(viasat_data)
+viasat_data.plot()
