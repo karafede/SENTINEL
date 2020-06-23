@@ -133,15 +133,19 @@ clean_edges_matched_route.plot()
 ### get vehicle tpye from "obu"
 idterm_category = pd.read_sql_query('''
     WITH ids AS (SELECT
-    split_part("TRIP_ID"::TEXT,'_', 1) iderm
+    split_part("TRIP_ID"::TEXT,'_', 1) idterm
     FROM
     mapmatching_2017)
-    select ids.iderm,
+    select ids.idterm,
     /*  obu.idterm, */
     obu.idvehcategory
     FROM ids
-    LEFT JOIN obu ON ids.iderm::bigint = obu.idterm
+    LEFT JOIN obu ON ids.idterm::bigint = obu.idterm
     LIMIT 100000''', conn_HAIG)
+
+
+
+
 
 ## some 'u' and 'v'
 # 0  3081517788  3321024237    398
@@ -151,19 +155,19 @@ idterm_category = pd.read_sql_query('''
 # 4   983659016  1586340139   1086
 ## https://www.postgresqltutorial.com/postgresql-where/
 
-idterm_type = pd.read_sql_query('''
-    SELECT
-    split_part("TRIP_ID"::TEXT,'_', 1) iderm, u, v, "TRIP_ID"
-    FROM
-    mapmatching_2017
-    WHERE ("u", "v") in (VALUES (1110091904, 3371747395)) 
-    UNION
-    SELECT
-    split_part("TRIP_ID"::TEXT,'_', 1) iderm, u, v, "TRIP_ID"
-    FROM
-    mapmatching_2017
-    WHERE  ("u", "v") in (VALUES (25844050, 1110091861)) 
-    LIMIT 100''', conn_HAIG)
+# idterm_type = pd.read_sql_query('''
+#     SELECT
+#     split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
+#     FROM
+#     mapmatching_2017
+#     WHERE ("u", "v") in (VALUES (1110091904, 3371747395))
+#     UNION
+#     SELECT
+#     split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
+#     FROM
+#     mapmatching_2017
+#     WHERE  ("u", "v") in (VALUES (25844050, 1110091861))
+#     LIMIT 100''', conn_HAIG)
 
 ## nodes of the selected area near Fisciano (u,v order)
 ## (1110091857, 1110091904)   Avellino-Salerno (--> uscita IKEA)
@@ -174,39 +178,39 @@ idterm_type = pd.read_sql_query('''
 ########################################################################################
 ### get vehicle type from "dataraw" for mapmatched vehicles within selected 'u', 'v' ###
 ########################################################################################
+
 idterm_type = pd.read_sql_query('''
     WITH ids AS (
             SELECT
-            split_part("TRIP_ID"::TEXT,'_', 1) iderm, u, v, "TRIP_ID", 
+            split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID",
             timedate, mean_speed, length
             FROM
             mapmatching_2017
-            WHERE ("u", "v") in (VALUES (1110091904, 3371747395)) 
+            WHERE ("u", "v") in (VALUES (1110091904, 3371747395))
         UNION
             SELECT
-            split_part("TRIP_ID"::TEXT,'_', 1) iderm, u, v, "TRIP_ID", 
+            split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID",
             timedate, mean_speed, length
             FROM
             mapmatching_2017
-            WHERE ("u", "v") in (VALUES (25844050, 1110091861)) 
-        LIMIT 500),
+            WHERE ("u", "v") in (VALUES (25844050, 1110091861))
+        LIMIT 100),
     ids_grouped AS (
     SELECT u, v, COUNT(*)
     FROM  ids
     GROUP BY u, v)
-    SELECT ids.iderm,
-        ids.u, ids.v, 
+    SELECT ids.idterm,
+        ids.u, ids.v,
         ids."TRIP_ID",
         ids.timedate,
-        ids.mean_speed, 
+        ids.mean_speed,
         ids.length,
         dataraw.vehtype,
         ids_grouped.count
     FROM ids
-    LEFT JOIN dataraw ON ids.iderm::bigint = dataraw.idterm
+    LEFT JOIN dataraw ON ids.idterm::bigint = dataraw.idterm
     LEFT JOIN ids_grouped ON ids.u = ids_grouped.u AND ids.v = ids_grouped.v
     ''', conn_HAIG)
-
 
 
 obu = pd.read_sql_query('''
@@ -215,9 +219,8 @@ from public.obu''', conn_HAIG)
 
 dataraw = pd.read_sql_query('''
 select *
-from public.dataraw
-limit 100''', conn_HAIG)
-
+from dataraw
+limit 1000''', conn_HAIG)
 
 route_check_2017_vehtype = pd.read_sql_query('''
                                     SELECT
@@ -240,37 +243,120 @@ viasat_fleet = pd.read_sql_query('''
 
 # https://dba.stackexchange.com/questions/68000/sql-hourly-data-aggregation-in-postgresql
 # https://stackoverflow.com/questions/42117796/how-do-i-group-by-by-hour-in-postgresql-with-a-time-field
+# https://www.postgresqltutorial.com/postgresql-date_trunc/
+
+idterm_type = pd.read_sql_query('''
+    WITH ids AS (
+            SELECT
+            split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID", 
+            timedate, mean_speed, length
+            FROM
+            mapmatching_2017
+            WHERE ("u", "v") in (VALUES (25844050, 1110091861),
+                                        (1110091904, 3371747395)) 
+        LIMIT 100),
+    ids_grouped AS (
+    SELECT u, v, COUNT(*)
+    FROM  ids
+    GROUP BY u, v)
+    SELECT ids.idterm,
+        ids.u, ids.v, 
+        ids."TRIP_ID",
+        ids.timedate,
+        ids.mean_speed, 
+        ids.length,
+        dataraw.vehtype,
+        ids_grouped.count
+    FROM ids
+    LEFT JOIN dataraw ON ids.idterm::bigint = dataraw.idterm
+    LEFT JOIN ids_grouped ON ids.u = ids_grouped.u AND ids.v = ids_grouped.v
+    ''', conn_HAIG)
+
+
 
 IDs_hourly = pd.read_sql_query('''  WITH ids AS 
                                     (SELECT
-                                    split_part("TRIP_ID"::TEXT,'_', 1) iderm, timedate
+                                    split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v,
+                                    timedate, mean_speed
                                     FROM mapmatching_2017
+                                    WHERE ("u", "v") in (VALUES (25844050, 1110091861),
+                                                                (1110091904, 3371747395))
                                     LIMIT 100),
-                                    ids_grouped AS(
-                                    SELECT SUM(date_part('hour', ids.timedate)), 
+                                ids_grouped AS(
+                                    SELECT  
                                     date_trunc('hour', ids.timedate) timehour,
-                                    date_part('hour', ids.timedate) ora
-                                    FROM  ids
-                                    GROUP BY date_trunc('hour', ids.timedate),
-                                            date_part('hour', ids.timedate))
-                                    SELECT ids_grouped.SUM,
-                                    ids_grouped.timehour,
-                                    ids_grouped.ora 
+                                    date_trunc('day', ids.timedate) timeday,
+                                    date_part('hour', ids.timedate) ora,
+                                    AVG(mean_speed),
+                                    dataraw.vehtype,
+                                    ids.idterm,
+                                    ids.u, ids.v, COUNT(*)
+                                FROM  ids
+                                LEFT JOIN dataraw ON ids.idterm::bigint = dataraw.idterm
+                                    GROUP BY 
+                                date_trunc('day', ids.timedate),
+                                date_trunc('hour', ids.timedate),
+                                date_part('hour', ids.timedate),
+                                dataraw.vehtype,
+                                ids.u, ids,v,
+                                ids.idterm)
+                                    SELECT ids_grouped.AVG,
+                                ids_grouped.timeday,
+                                ids_grouped.timehour,
+                                ids_grouped.ora,
+                                ids_grouped.vehtype,
+                                ids_grouped.idterm,
+                                ids_grouped.u,
+                                ids_grouped.v,
+                                ids_grouped.count
                                     FROM ids_grouped
                                     ''', conn_HAIG)
+IDs_hourly.to_csv('IDs_hourly.csv')
 
-IDs_hourly = pd.read_sql_query('''  WITH ids AS 
-                                    (SELECT
-                                    split_part("TRIP_ID"::TEXT,'_', 1) iderm, timedate
-                                    FROM mapmatching_2017
-                                    LIMIT 100)
-                                    SELECT date_trunc('hour', ids.timedate),
-                                    ids.timedate,
-                                    ids.iderm
-                                    FROM ids
-                                    ''', conn_HAIG)
-## grouby and mean of the hour
 
+
+###################################################################
+#### create table with 'idterm', 'vehtype' and 'portata' ##########
+
+idterm_vehtype_portata = pd.read_sql_query('''
+                       WITH ids AS (SELECT idterm, vehtype
+                                    FROM
+                               dataraw)
+                           select ids.idterm,
+                                  ids.vehtype,
+                                  obu.portata
+                        FROM ids
+                        LEFT JOIN obu ON ids.idterm = obu.idterm
+                        ''', conn_HAIG)
+
+## drop duplicates ###
+idterm_vehtype_portata.drop_duplicates(['idterm'], inplace=True)
+idterm_vehtype_portata.to_csv('D:/ENEA_CAS_WORK/SENTINEL/viasat_data/idterm_vehtype_portata.csv')
+## relaod .csv file
+idterm_vehtype_portata = pd.read_csv('D:/ENEA_CAS_WORK/SENTINEL/viasat_data/idterm_vehtype_portata.csv')
+idterm_vehtype_portata = idterm_vehtype_portata[['idterm', 'vehtype', 'portata']]
+# Create an SQL connection engine to the output DB
+engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/HAIG_Viasat_SA')
+connection = engine.connect()
+idterm_vehtype_portata.to_sql("idterm_portata", con=connection, schema="public",
+          if_exists='append', index=False)
+
+
+# IDs_hourly = pd.read_sql_query('''  WITH ids AS
+#                                     (SELECT
+#                                     split_part("TRIP_ID"::TEXT,'_', 1) idterm, timedate
+#                                     FROM mapmatching_2017
+#                                     LIMIT 100)
+#                                     SELECT date_trunc('day', ids.timedate),
+#                                     ids.timedate,
+#                                     ids.idterm
+#                                     FROM ids
+#                                     ''', conn_HAIG)
+
+
+#################################################################################
+#################################################################################
+##################################################################################
 
 
 # get same color name according to the same 'u' 'v' pair

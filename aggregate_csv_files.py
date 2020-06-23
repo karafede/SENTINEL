@@ -13,7 +13,6 @@ cwd = os.getcwd()
 conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
 cur_HAIG = conn_HAIG.cursor()
 
-
 ## create extension postgis on the database HAIG_Viasat_SA  (only one time)
 
 # cur_HAIG.execute("""
@@ -170,6 +169,8 @@ cur_HAIG.close()
 ## create an 'index only' to make faster queries in "routecheck_2017" table ##
 ##############################################################################
 
+#### !!!! to create indexes on two columns together...
+# https://www.postgresql.org/docs/12/indexes-multicolumn.html
 
 ## add geometry WGS84 4286 (Salerno, Italy)
 cur_HAIG.execute("""
@@ -283,15 +284,7 @@ all_ID_TRACKS_filtered = [x for x in all_ID_TRACKS if x in idterms_fleet]
 all_VIASAT_IDterminals = pd.read_sql_query(
     ''' SELECT *
         FROM public.routecheck_2019
-        WHERE "track_ID" = '2400053' ''', conn_HAIG)
-
-
-# >>> list1 = ['a','a','b','b','b','c','d','e','e','g','g']
-# >>> list2 = ['a','c','z','y']
-# >>> [x for x in list1 if x in list2]
-# ['a', 'a', 'c']
-
-
+        WHERE "idterm" = '2400053' ''', conn_HAIG)
 
 
 '''
@@ -427,7 +420,6 @@ cur_HAIG.close()
 ### Check mapmatching DB #################################
 ##########################################################
 
-
 conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
 cur_HAIG = conn_HAIG.cursor()
 
@@ -459,6 +451,22 @@ print(len(all_ID_TRACKS_DIFF))
 with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2017_new.txt", "w") as file:
     file.write(str(all_ID_TRACKS_DIFF))
 
+######################################
+### check the size of a table ########
+######################################
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('mapmatching_2017') )''', conn_HAIG)
+
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('public."OSM_edges"') )''', conn_HAIG)
+
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('public.idterm_portata') )''', conn_HAIG)
+
+### check the size of the WHOLE DB "HAIG_Viasat_SA"
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_database_size('HAIG_Viasat_SA') )''', conn_HAIG)
+
 
 ###########################################################
 ### get right geometry al linestring and plot data ########
@@ -486,3 +494,28 @@ viasat_data['geometry'] = viasat_data.apply(wkb_tranformation, axis=1)
 viasat_data.drop(['geom'], axis=1, inplace= True)
 viasat_data = gpd.GeoDataFrame(viasat_data)
 viasat_data.plot()
+
+
+#######################################################################
+## count how many times an edge ('u', 'v') occur in the geodataframe ##
+#######################################################################
+
+count_AAA = pd.read_sql_query('''
+                SELECT u, v, COUNT(*)
+                FROM  public.mapmatching_2017
+                GROUP BY u, v ''', conn_HAIG)
+
+OSM_edges = pd.read_sql_query('''
+                        SELECT * 
+                        FROM public."OSM_edges"
+                        LIMIT 300 ''', conn_HAIG)
+
+OSM_nodes = pd.read_sql_query('''
+                        SELECT * 
+                        FROM public."OSM_nodes"
+                        LIMIT 300 ''', conn_HAIG)
+
+idterm_portata = pd.read_sql_query('''
+                        SELECT * 
+                        FROM public."idterm_portata"
+                        ''', conn_HAIG)

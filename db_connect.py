@@ -16,3 +16,20 @@ def connect_EcoTripRM():
     #Connect to an existing database
     conn = psycopg2.connect(user="postgres", password="vaxcrio1", host="localhost", port="5432", database="EcoTripRM_ga")
     return(conn)
+def connect_EcoTripCT():
+    #Connect to an existing database
+    conn = psycopg2.connect(user="postgres", password="superuser", host="192.168.132.18",
+                            port="5432", database="EcoTripCT")
+    return(conn)
+def connect_HAIG_Viasat_CT():
+    #Connect to an existing database
+    conn = psycopg2.connect(user="postgres", password="superuser", host="192.168.132.18",
+                            port="5432", database="HAIG_Viasat_CT")
+    return(conn)
+def connect_HAIG_Viasat_SA():
+    #Connect to an existing database
+    conn = psycopg2.connect(user="postgres", password="superuser", host="192.168.132.18",
+                            port="5432", database="HAIG_Viasat_SA")
+    # conn = psycopg2.connect(user="postgres", password="superuser", host="10.0.0.1",
+    #                         port="5432", database="HAIG_Viasat_SA")
+    return(conn)
