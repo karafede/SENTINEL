@@ -37,7 +37,7 @@ os.chdir('D:/ENEA_CAS_WORK/SENTINEL/viasat_data')
 os.getcwd()
 
 ## load grafo
-file_graphml = 'Fisciano__Italy_50km.graphml'
+file_graphml = 'Fisciano__Italy_70km.graphml'
 grafo_ALL = ox.load_graphml(file_graphml)
 ## ox.plot_graph(grafo_ALL)
 # gdf_nodes, gdf_edges = ox.graph_to_gdfs(grafo)
@@ -76,7 +76,7 @@ engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/
 # gdf_nodes_ALL.to_sql("OSM_nodes", con=connection, schema="public",
 #                    if_exists='append')
 
-## create index on the column (u,v) togethers in the table 'gdf_edges_ALL'
+## create index on the column (u,v) togethers in the table 'gdf_edges_ALL' ###
 ## Multicolumn Indexes ####
 
 # cur_HAIG.execute("""
@@ -130,6 +130,7 @@ with open("idterms_fleet.txt", "r") as file:
 # track_ID = '2400305'       # type 2 (2017)
 # track_ID = '3246838'
 # all_ID_TRACKS = ['3246838']
+track_ID = '3251183'
 
 ################################################################################
 # create basemap
@@ -146,7 +147,7 @@ my_map = folium.Map([ave_LAT, ave_LON], zoom_start=11, tiles='cartodbpositron')
 for last_track_idx, track_ID in enumerate(all_ID_TRACKS):
     track_ID = str(track_ID)
     viasat_data = pd.read_sql_query('''
-                SELECT * FROM public.routecheck_2019 
+                SELECT * FROM public.routecheck_2017 
                 WHERE "idterm" = '%s' ''' % track_ID, conn_HAIG)
     viasat_data = viasat_data[viasat_data.anomaly != "IQc345d"]
     viasat_data = viasat_data[viasat_data.anomaly != "EQc3456"]

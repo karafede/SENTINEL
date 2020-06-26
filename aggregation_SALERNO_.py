@@ -129,6 +129,9 @@ clean_edges_matched_route = gpd.GeoDataFrame(clean_edges_matched_route)
 clean_edges_matched_route.drop_duplicates(['u', 'v'], inplace=True)
 clean_edges_matched_route.plot()
 
+############################################################################
+############################################################################
+
 
 ### get vehicle tpye from "obu"
 idterm_category = pd.read_sql_query('''
@@ -155,19 +158,28 @@ idterm_category = pd.read_sql_query('''
 # 4   983659016  1586340139   1086
 ## https://www.postgresqltutorial.com/postgresql-where/
 
-# idterm_type = pd.read_sql_query('''
-#     SELECT
-#     split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
-#     FROM
-#     mapmatching_2017
-#     WHERE ("u", "v") in (VALUES (1110091904, 3371747395))
-#     UNION
-#     SELECT
-#     split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
-#     FROM
-#     mapmatching_2017
-#     WHERE  ("u", "v") in (VALUES (25844050, 1110091861))
-#     LIMIT 100''', conn_HAIG)
+
+idterm_type = pd.read_sql_query('''
+    SELECT
+    split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
+    FROM
+    mapmatching_2017
+    LIMIT 100''', conn_HAIG)
+
+
+idterm_type = pd.read_sql_query('''
+    SELECT
+    split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
+    FROM
+    mapmatching_2017
+    WHERE ("u", "v") in (VALUES (1110091904, 3371747395))
+    UNION
+    SELECT
+    split_part("TRIP_ID"::TEXT,'_', 1) idterm, u, v, "TRIP_ID"
+    FROM
+    mapmatching_2017
+    WHERE  ("u", "v") in (VALUES (25844050, 1110091861))
+    LIMIT 100''', conn_HAIG)
 
 ## nodes of the selected area near Fisciano (u,v order)
 ## (1110091857, 1110091904)   Avellino-Salerno (--> uscita IKEA)
@@ -222,6 +234,7 @@ select *
 from dataraw
 limit 1000''', conn_HAIG)
 
+
 route_check_2017_vehtype = pd.read_sql_query('''
                                     SELECT
                                         routecheck_2019.id,
@@ -230,7 +243,7 @@ route_check_2017_vehtype = pd.read_sql_query('''
                                     FROM
                                         routecheck_2019
                                     LEFT JOIN dataraw ON routecheck_2019.id = dataraw.id
-                                    LIMIT 1000''', conn_HAIG)
+                                    LIMIT 100''', conn_HAIG)
 
 viasat_fleet = pd.read_sql_query('''
               SELECT *

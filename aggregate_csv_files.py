@@ -243,7 +243,26 @@ conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-ALTER TABLE public.routecheck_2017 ALTER COLUMN "idterm" TYPE bigint USING "idterm" ::bigint
+ALTER TABLE public.routecheck_2019 ALTER COLUMN "idterm" TYPE bigint USING "idterm" ::bigint
+""")
+conn_HAIG.commit()
+
+
+
+
+cur_HAIG.execute("""
+CREATE index dataraw_id_idx on public.dataraw("id");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_id_idx on public.routecheck_2017("id");
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_id_idx on public.routecheck_2019("id");
 """)
 conn_HAIG.commit()
 
@@ -427,7 +446,7 @@ cur_HAIG = conn_HAIG.cursor()
 # get all ID terminal of Viasat data
 all_VIASAT_TRIP_IDs = pd.read_sql_query(
     ''' SELECT "TRIP_ID" 
-        FROM public.mapmatching_2017 ''', conn_HAIG)
+        FROM public.mapmatching_2019 ''', conn_HAIG)
 
 # make a list of all unique trips
 all_TRIP_IDs = list(all_VIASAT_TRIP_IDs.TRIP_ID.unique())
@@ -441,21 +460,51 @@ print("vehicle number:", len(idterm))
 
 
 ## reload 'all_ID_TRACKS' as list
-with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2017.txt", "r") as file:
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019.txt", "r") as file:
     all_ID_TRACKS = eval(file.readline())
 print(len(all_ID_TRACKS))
 ## make difference between all idterm and matched idterms
 all_ID_TRACKS_DIFF = list(set(all_ID_TRACKS) - set(idterm))
 print(len(all_ID_TRACKS_DIFF))
 # ## save 'all_ID_TRACKS' as list
-with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2017_new.txt", "w") as file:
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019_new.txt", "w") as file:
     file.write(str(all_ID_TRACKS_DIFF))
 
 ######################################
 ### check the size of a table ########
 ######################################
+
+## create index on the column (u,v) togethers in the table 'mapmatching_2017' ###
+cur_HAIG.execute("""
+CREATE INDEX UV_idx ON public.mapmatching_2017(u,v);
+""")
+conn_HAIG.commit()
+
+
+## create index on the "TRIP_ID" column
+cur_HAIG.execute("""
+CREATE index trip_id_match2017_idx on public.mapmatching_2017("TRIP_ID");
+""")
+conn_HAIG.commit()
+
+
+## DROP columns in mapmatching_2017
+cur_HAIG.execute("""
+ALTER TABLE "mapmatching_2017" DROP "name"
+     """)
+conn_HAIG.commit()
+
 pd.read_sql_query('''
 SELECT pg_size_pretty( pg_relation_size('mapmatching_2017') )''', conn_HAIG)
+
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('dataraw') )''', conn_HAIG)
+
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('routecheck_2017') )''', conn_HAIG)
+
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('routecheck_2019') )''', conn_HAIG)
 
 pd.read_sql_query('''
 SELECT pg_size_pretty( pg_relation_size('public."OSM_edges"') )''', conn_HAIG)
