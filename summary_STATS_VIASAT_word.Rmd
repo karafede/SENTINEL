@@ -38,6 +38,11 @@ library(ggplot2)
 library(dplyr)
 library(openair)
 library(pander)
+library(ggrepel)
+library(grid)
+library(gridExtra)
+library(broom)
+library(tidyr)
 options(scipen=5)
 
 
@@ -106,8 +111,50 @@ pander(total_counts_direzione, emphasize.strong.cols = 1, missing = "")
 *<br/><br/>*
 
 
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 2.** Numero di passaggi totali per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi sulle due direzioni di marcia: --> Salerno e <-- Avellino."}
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 2.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2. I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi nella direzione verso Salerno."}
+
+direzione <- data[, c("direzione", "u", "idterm", "vehtype")]
+
+total_counts_type_direzione <- direzione %>%
+    group_by(direzione,
+             vehtype) %>%
+    summarize(count_VIASAT = length(idterm))
+
+total_counts_type_direzione <- total_counts_type_direzione %>%
+  left_join(total_counts_direzione, by = c("direzione"))
+
+total_counts_type_direzione <- total_counts_type_direzione %>%
+  mutate(norm_conteggi = (count_VIASAT)/(`passaggi VIASAT`)*100)
+total_counts_type_direzione$norm_conteggi <- round(total_counts_type_direzione$norm_conteggi, digits = 0)
+
+categories <- as.character( unique(total_counts_type_direzione$vehtype))
+
+### plot passaggi #####
+#######################
+
+q <- ggplot(data = total_counts_type_direzione,
+            aes(vehtype, count_VIASAT, fill = direzione)) +
+  theme_bw() +
+  geom_bar(stat = "identity", position = position_stack()) +
+  scale_x_discrete(limits = categories) +
+  geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
+            position = position_stack(0.8), size=5)+
+  theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
+  theme(axis.title.x = element_blank()) +
+  ylab(expression(paste("numero di passaggi (a.u)"))) +
+  theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
+  theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+          axis.text.x  = element_text(angle=0, vjust=1, ,hjust=1, size=14, face="bold")) +
+  ggtitle("Numero di passaggi totali (1-18 Settembre 2017)") +
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
+q
+
+````
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 3.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi."}
 
 ###############################
 ### summary stats by day ######
@@ -154,7 +201,7 @@ VIASAT_STATS_passaggi_daily <- as.data.frame(VIASAT_STATS_passaggi_daily)
 VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
   group_by(direzione,
            day) %>%
-  mutate(norm_conteggi = (conteggi_per_tipo/conteggi_totali[1])*100)
+  mutate(norm_conteggi = (conteggi_per_tipo/conteggi_totali)*100)
 VIASAT_STATS_passaggi_daily$norm_conteggi <- round(VIASAT_STATS_passaggi_daily$norm_conteggi, digits = 0)
 
 
@@ -170,12 +217,14 @@ categories <- as.character( unique(VIASAT_STATS_passaggi_daily$vehtype))
 ### plot passaggi by % pecentage and by DAY #####
 ###################################################
 
-STATS_passaggi_daily_SALERNO <- VIASAT_STATS_passaggi_daily %>%
-   filter(direzione == "--> Salerno") 
+# STATS_passaggi_daily_SALERNO <- VIASAT_STATS_passaggi_daily %>%
+#    filter(direzione == "--> Salerno") 
 
-p <- ggplot(data = STATS_passaggi_daily_SALERNO,
+p <- ggplot(data = VIASAT_STATS_passaggi_daily,
               aes(day, conteggi_per_tipo, fill = day)) + guides(fill=FALSE) +
-    geom_bar(stat = "identity") + facet_wrap( ~ vehtype, ncol = 4) +
+    geom_bar(stat = "identity") + 
+    # facet_wrap( ~ vehtype, ncol = 4) +
+    facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
     ylim(0, 4500) +
     theme_bw() +
@@ -188,9 +237,9 @@ p <- ggplot(data = STATS_passaggi_daily_SALERNO,
           axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
     xlab("giorno settimana") +            # Set y-axis label
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
-          axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
+          axis.text.x  = element_text(angle=45, vjust=1, size=12)) +
     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 4, hjust = 0.5,  vjust = -0.5) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (Settembre 2017)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -202,41 +251,7 @@ p <- ggplot(data = STATS_passaggi_daily_SALERNO,
 *<br/><br/>*
 
 
-
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 2a.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2. I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi nella direzione verso Avellino"}
-
-STATS_passaggi_daily_AVELLINO <- VIASAT_STATS_passaggi_daily %>%
-   filter(direzione == "<-- Avellino")
-
-
-p <- ggplot(data = STATS_passaggi_daily_AVELLINO,
-              aes(day, conteggi_per_tipo, fill = day)) + guides(fill=FALSE) +
-    geom_bar(stat = "identity") + facet_wrap( ~ vehtype, ncol = 4) +
-    guides(fill=FALSE) +
-    ylim(0, 4500) +
-    theme_bw() +
-    theme( strip.text = element_text(size = 13)) +
-    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
-    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
-    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
-    ylab("numero di passaggi") +            # Set y-axis label
-    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
-          axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
-    xlab("giorno settimana") +            # Set y-axis label
-    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
-          axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
-    geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 4, hjust = 0.5,  vjust = -0.5) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (Settembre 2017)") + 
-    theme(plot.title = element_text(lineheight=.8, face="bold"))
-  p
-
-
-```
-
-*<br/><br/>*
-
-
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 3.** Numero di passaggi totali per ora della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 nella direzione verso Salerno."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4.** Numero di passaggi totali per ora della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino)."}
 
 ################################
 ### summary stats by hour ######
@@ -264,13 +279,14 @@ VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hou
 
 #### plot
 
-VIASAT_STATS_passaggi_hourly_SALERNO <- VIASAT_STATS_passaggi_hourly %>%
-   filter(direzione == "--> Salerno") 
+# VIASAT_STATS_passaggi_hourly_SALERNO <- VIASAT_STATS_passaggi_hourly %>%
+#    filter(direzione == "--> Salerno") 
 
-p <- ggplot(data = VIASAT_STATS_passaggi_hourly_SALERNO,
+p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
               aes(hour, conteggi_totali, fill = hour)) + guides(fill=FALSE) +
     geom_bar(stat = "identity") + 
-    facet_wrap( ~ vehtype, ncol = 4) +  
+    # facet_wrap( ~ vehtype, ncol = 4) +  
+    facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
     # ylim(0, 1100000) +
     theme_bw() +
@@ -287,7 +303,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly_SALERNO,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi per ora della giornata (--> Salerno) (Settembre 2017)") + 
+    ggtitle("Numero totale di passaggi per ora della giornata (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -298,19 +314,270 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly_SALERNO,
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 3a.** Numero di passaggi totali per ora della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 nella direzione verso Avellino"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)"}
 
-#### plot
 
-VIASAT_STATS_passaggi_hourly_Avellino <- VIASAT_STATS_passaggi_hourly %>%
-   filter(direzione == "<-- Avellino") 
+plots <- lapply(split(data, data$vehtype),FUN=function(speed_dist){ 
+    # ggplot(aes((speed), fill = as.factor(vehtype))) +
+    ggplot(speed_dist, aes(speed)) +
+    # ggplot(aes( (mean_speed))) + 
+    geom_density(alpha = 0.5) +
+    ylim(0, 0.035) +
+    # geom_histogram(binwidth=.05) +   ### counts
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(speed_dist$speed),
+                           sd = sd(speed_dist$speed)), colour = "red") +  ## fit withGaussian
+    theme_bw() +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+    ylab("densità (u.a)") +
+    xlab("velocità (km/h)") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+    geom_vline(xintercept=mean(speed_dist$speed), color="red", linetype="dashed", size=0.5) 
+})
 
-p <- ggplot(data = VIASAT_STATS_passaggi_hourly_Avellino,
-              aes(hour, conteggi_totali, fill = hour)) + guides(fill=FALSE) +
+
+# Finally, present the plots on 3 columns.
+grid.arrange(plots$car, plots$fleet, nrow=1, ncol = 2,
+             top = textGrob("car                                                  fleet",gp=gpar(fontsize=20,font=3)))
+
+````
+
+
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.** "}
+
+
+
+# estimate paramters
+library(MASS)
+library(fitdistrplus)
+data_car <- data %>%
+  filter(vehtype == "car")
+data_fleet <- data %>%
+  filter(vehtype == "fleet")
+## fit with a "gaussian/normal" distribution
+fit_cars <- fitdistrplus::fitdist(data_car$speed, "norm")
+class(fit_cars) <- c("fitdist", "fitdistr") 
+fit_cars <- as.data.frame(broom::tidy(fit_cars))
+names(fit_cars) <- c("term", "car", "car_error" )
+
+fit_fleets  <- fitdistrplus::fitdist(data_fleet$speed, "norm")
+class(fit_fleets) <- c("fitdist", "fitdistr") 
+fit_fleets <- as.data.frame(broom::tidy(fit_fleets))
+names(fit_fleets) <- c("term", "fleet", "fleet_error" )
+## plot
+# denscomp(ft = fit_cars, legendtext = "Normal")
+# denscomp(ft = fit_fleets, legendtext = "Normal")
+
+cars <- gather(fit_cars,  "tipo veicolo", "velocità", 2:length(fit_cars)) 
+fleets <- gather(fit_fleets, "tipo veicolo", "velocità", 2:length(fit_fleets)) 
+car_fleets <- rbind(cars, fleets)
+car_fleets <- car_fleets %>%
+  filter(`tipo veicolo` %in% c("car", "fleet"))
+car_fleets$`velocità` <- round(car_fleets$`velocità`, digits = 2)
+names(car_fleets) <- c("", "tipo veicolo", "velocità")
+
+Caption <- paste0("**Tabella 3.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee** con una distribuzione gaussiana. Sono stati confrontati dati ANAS e FCD di Viasat per il periodo 1-18 Settembre 2017. I parametri di valore medio e di deviazione standard sono riportati per automobli e veicoli pesanti.")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(car_fleets, emphasize.strong.cols = 1, missing = "")
+
+````
+
+
+*<br/><br/>*
+
+
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella 3a.**"}
+
+
+
+# estimate paramters
+library(MASS)
+library(fitdistrplus)
+## fit with a "gaussian/normal" distribution
+fit_VIASAT <- fitdistrplus::fitdist(data$speed, "norm")
+class(fit_VIASAT) <- c("fitdist", "fitdistr") 
+fit_VIASAT <- as.data.frame(broom::tidy(fit_VIASAT))
+names(fit_VIASAT) <- c("term", "veicoli VIASAT", "car_error" )
+
+
+fit_VIASAT <- gather(fit_VIASAT,  "tipo veicolo", "velocità", 2:length(fit_VIASAT)) 
+fit_VIASAT <- fit_VIASAT %>%
+  filter(`tipo veicolo` %in% c("veicoli VIASAT"))
+fit_VIASAT$`velocità` <- round(fit_VIASAT$`velocità`, digits = 2)
+
+
+
+### load ANAS data ####
+velocita_ANAS <-  read.csv(paste0("D:/ENEA_CAS_WORK/SENTINEL/ANAS/velocita_ANAS.csv"),
+         header = T, sep=",")[-1]
+
+
+names(velocita_ANAS)[names(velocita_ANAS) == 'velocità'] <- 'speed'
+
+p <- ggplot(data =velocita_ANAS,  aes((x=speed))) +
+    geom_density(alpha = 0.5) +
+   geom_density(data = data) +
+    stat_function(fun = dnorm, args = list(mean = mean(velocita_ANAS$speed),
+                                           sd = sd(velocita_ANAS$speed)), colour = "red") + 
+    stat_function(fun = dnorm, args = list(mean = mean(data$speed),
+                                           sd = sd(data$speed)), colour = "blue") +
+    # scale_x_continuous(trans='log10') +
+    guides(fill=guide_legend(title="tipo veicolo")) +
+    theme_bw() +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+    ylab("densità (u.a)") +
+    # ylab("conteggi") +
+    xlab("velocità (km/h)") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+   geom_vline(xintercept=mean(  velocita_ANAS$speed), color="red", linetype="dashed",
+              size=0.5) +
+   geom_vline(xintercept=mean(  data$speed), color="blue", linetype="dashed",
+              size=0.5) +
+    ggtitle("Distribuzione delle velocità istantanee (ANAS; 1-18 Settembre 2017)") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+p
+
+```
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella 3a.**"}
+
+
+## fit with a "gaussian/normal" distribution
+fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$speed, "norm")
+class(fit_ANAS) <- c("fitdist", "fitdistr") 
+fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
+names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
+
+fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS)) 
+fit_ANAS <- fit_ANAS %>%
+  filter(`tipo veicolo` == "veicoli ANAS")
+
+fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
+### combine the data in an unique dataframe
+all_fits <- rbind(fit_ANAS, fit_VIASAT)
+names(all_fits) <- c("", "source data", "velocità")
+
+
+
+Caption <- paste0("**Tabella 3a.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee**con una distribuzione *gaussiana*. Sono stati confrontati dati ANAS e FCD di Viasat per il periodo 1-18 Settembre 2017. I parametri di valore medio e di deviazione standard sono riportati per tutti gli autoveicoli")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(all_fits, emphasize.strong.cols = 1, missing = "")
+
+````
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6.** Velocità media istantanea per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+
+###############################
+### summary stats by day ######
+###############################
+
+## get all passaggi (conteggi) by hour
+VIASAT_speed_STATS_daily <- data %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, day, hour) %>%
+    summarize(instant_speed=mean(speed),
+              count = length(idterm))
+
+# somma di tutti i tipi di conteggi per i passaggi di veicoli
+VIASAT_speed_daily <- VIASAT_speed_STATS_daily %>%
+  group_by(direzione,
+           vehtype,
+           day) %>%
+  summarise(velocita_per_tipo = mean(instant_speed, na.rm = TRUE))
+
+
+VIASAT_speed_daily <- as.data.frame(VIASAT_speed_daily)
+VIASAT_speed_daily <- VIASAT_speed_daily[order(-VIASAT_speed_daily$velocita_per_tipo),]
+
+categories <- as.character( unique(VIASAT_speed_daily$vehtype))
+
+### plot velocita' instantanea by DAY #####
+###########################################
+
+p <- ggplot(data = VIASAT_speed_daily,
+              aes(day, velocita_per_tipo, fill = vehtype)) + guides(fill=FALSE) +
     geom_bar(stat = "identity") + 
-    facet_wrap( ~ vehtype, ncol = 4) +  
+  # facet_wrap( ~ vehtype, ncol = 4) +
+  facet_grid(direzione ~ vehtype, scales = "free", space = "free") +  
     guides(fill=FALSE) +
-    # ylim(0, 1100000) +
+    ylim(0, 100) +
+    theme_bw() +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+    ylab("velocità (km/h)") +            # Set y-axis label
+    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
+    xlab("giorno settimana") +            # Set y-axis label
+    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+          axis.text.x  = element_text(angle=45, vjust=1, size=12)) +
+    geom_hline(yintercept=90, color="red", linetype="dashed", size=0.5) +
+    ggtitle("Velocità media istantanea per giorno della settimana (1-18 Settembre 2017)") + 
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+  p
+
+
+```
+
+
+*<br/><br/>*
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6a.** Velocità media istantanea per ora della giornata e per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+
+################################
+### summary stats by hour ######
+################################
+
+## get all passaggi (conteggi) by hour
+VIASAT_speed_STATS_hourly <- data %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, day, hour) %>%
+    summarize(instant_speed=mean(speed),
+              count = length(idterm))
+
+VIASAT_speed_STATS_hourly <- VIASAT_speed_STATS_hourly %>%
+  group_by(direzione,
+           vehtype,
+           hour) %>%
+  summarise(velocita_per_tipo = mean(instant_speed, na.rm = TRUE))
+
+VIASAT_speed_STATS_hourly <- as.data.frame(VIASAT_speed_STATS_hourly)
+ 
+VIASAT_speed_STATS_hourly <- VIASAT_speed_STATS_hourly[order(-VIASAT_speed_STATS_hourly$velocita_per_tipo),]
+
+VIASAT_speed_STATS_hourly$hour <- as.numeric(VIASAT_speed_STATS_hourly$hour)
+
+
+################
+#### plot ######
+################
+ 
+
+p <- ggplot(data = VIASAT_speed_STATS_hourly,
+              aes(hour, velocita_per_tipo, fill = hour)) + guides(fill=FALSE) +
+    geom_bar(stat = "identity") + 
+    facet_grid(direzione ~ vehtype, scales = "free", space = "free") +   
+    guides(fill=FALSE) +
+    ylim(0, 120) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -325,9 +592,15 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly_Avellino,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi per ora della giornata (--> Avellino) (Settembre 2017)") + 
+    geom_hline(yintercept=100, color="red", linetype="dashed", size=0.5) +
+    ggtitle("Velocità media istantanea per ora della giornata (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
 
 ```
+
+
+*<br/><br/>*
+
+

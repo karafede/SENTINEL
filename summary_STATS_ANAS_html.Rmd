@@ -20,7 +20,7 @@ Di seguito riportiamo alcune serie temporali per il conteggio dei veicoli sulle 
 *<br/><br/>*
 
 ```{r, echo=FALSE, fig.cap="**Figura 1a**.Postazione ANAS 671 (A2, Km 5+004), sull'autostrada A2.", out.width = '70%'}
-knitr::include_graphics("C:/ENEA_CAS_WORK/SENTINEL/ANAS/postazione_671 (A2, Km 5+004).png")
+knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/ANAS/postazione_671 (A2, Km 5+004).png")
 ```
 
 *<br/><br/>*
@@ -60,7 +60,7 @@ op <- par(no.readonly = TRUE)
 
 # load data
 # setwd
-WD <- "C:/ENEA_CAS_WORK/SENTINEL/ANAS/"
+WD <- "D:/ENEA_CAS_WORK/SENTINEL/ANAS/"
 
 # read all data
 DB_2017 <- read.csv(paste0(WD,"671_(A2_Km_5+004)_2017.csv"),
@@ -195,8 +195,8 @@ plot
 # make daily SUMS
 Daily_All_Corsie_ASCENDENTI <- data.frame(timeAverage(mydata   = All_Corsie_ASCENDENTI,
                                     avg.time   = "day", statistic  = "sum"))
-            #start.date = round(min(DF$General$date, na.rm = TRUE), units = "hours"), 
-            # end.date   = round(max(DF$General$date, na.rm = TRUE), units = "hours")))
+#start.date = round(min(DF$General$date, na.rm = TRUE), units = "hours"), 
+# end.date   = round(max(DF$General$date, na.rm = TRUE), units = "hours")))
                 
 
 # Build timeseries for plots
@@ -389,7 +389,9 @@ Per i rimanenti mesi dell'anno, potremmo concludere che il traffico pesante e' e
 
 
 ## get the months of observations
-DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+# DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+DB$month <- format(DB$date, format = "%b")
+
 ## get the DAY and HOUR (of the week) of observations
 DB <- DB %>%
   mutate(day = wday(date, label=TRUE)) %>%
@@ -429,11 +431,12 @@ STATS_passaggi_daily <- passaggi %>%
 
 STATS_passaggi_daily$classi <- as.factor(STATS_passaggi_daily$classi)
 # change "passaggi with "N
-levels(STATS_passaggi_daily$classi) <- gsub("passaggi_totali","N", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$classi) <- gsub("classe_di_velocita_","", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$classi) <- gsub("__","_", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$direzione) <- gsub("A","--> Salerno", levels(STATS_passaggi_daily$direzione))
-levels(STATS_passaggi_daily$direzione) <- gsub("D","<-- Avellino", levels(STATS_passaggi_daily$direzione))
+STATS_passaggi_daily$classi <- gsub("passaggi_totali","N", (STATS_passaggi_daily$classi))
+
+STATS_passaggi_daily$classi <- gsub("classe_di_velocita_","", (STATS_passaggi_daily$classi))
+STATS_passaggi_daily$classi <- gsub("__","_", (STATS_passaggi_daily$classi))
+STATS_passaggi_daily$direzione <- gsub("A","--> Salerno", (STATS_passaggi_daily$direzione))
+STATS_passaggi_daily$direzione <- gsub("D","<-- Avellino", (STATS_passaggi_daily$direzione))
 
 to_keep <- as.vector( STATS_passaggi_daily$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi_daily$classi)])
 
@@ -464,11 +467,11 @@ STATS_passaggi_daily <- STATS_passaggi_daily[order(-STATS_passaggi_daily$norm_co
 STATS_passaggi_daily <- STATS_passaggi_daily[!(STATS_passaggi_daily$conteggi_totali == 0), ]
 STATS_passaggi_daily <- STATS_passaggi_daily[!(STATS_passaggi_daily$norm_conteggi == 0), ]
 STATS_passaggi_daily <- STATS_passaggi_daily[!(STATS_passaggi_daily$norm_conteggi == 100), ]
-levels(STATS_passaggi_daily$classi) <- gsub("N_","", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$classi) <- gsub("\\camion_7_5m\\b","camion < 7.5m", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$classi) <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$classi) <- gsub("autotreni","autotreni & artic.", levels(STATS_passaggi_daily$classi))
-levels(STATS_passaggi_daily$classi) <- gsub("auto_rimorchio","auto rimorchio", levels(STATS_passaggi_daily$classi))
+STATS_passaggi_daily$classi <- gsub("N_","", (STATS_passaggi_daily$classi))
+STATS_passaggi_daily$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi_daily$classi))
+STATS_passaggi_daily$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi_daily$classi))
+STATS_passaggi_daily$classi <- gsub("autotreni","autotreni & artic.", (STATS_passaggi_daily$classi))
+STATS_passaggi_daily$classi <- gsub("auto_rimorchio","auto rimorchio", (STATS_passaggi_daily$classi))
 STATS_passaggi_daily <- STATS_passaggi_daily %>%
   filter(!classi %in% c("N"))  
 
@@ -636,11 +639,11 @@ STATS_passaggi_hourly <- passaggi %>%
 
 STATS_passaggi_hourly$classi <- as.factor(STATS_passaggi_hourly$classi)
 # change "passaggi with "N
-levels(STATS_passaggi_hourly$classi) <- gsub("passaggi_totali","N", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$classi) <- gsub("classe_di_velocita_","", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$classi) <- gsub("__","_", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$direzione) <- gsub("A","--> Salerno", levels(STATS_passaggi_hourly$direzione))
-levels(STATS_passaggi_hourly$direzione) <- gsub("D","<-- Avellino", levels(STATS_passaggi_hourly$direzione))
+STATS_passaggi_hourly$classi <- gsub("passaggi_totali","N", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("classe_di_velocita_","", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("__","_", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$direzione <- gsub("A","--> Salerno", (STATS_passaggi_hourly$direzione))
+STATS_passaggi_hourly$direzione <- gsub("D","<-- Avellino", (STATS_passaggi_hourly$direzione))
 
 to_keep <- as.vector( STATS_passaggi_hourly$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi_hourly$classi)])
 
@@ -668,19 +671,19 @@ STATS_passaggi_hourly <- STATS_passaggi_hourly[order(-STATS_passaggi_hourly$norm
 STATS_passaggi_hourly <- STATS_passaggi_hourly[!(STATS_passaggi_hourly$conteggi_totali == 0), ]
 STATS_passaggi_hourly <- STATS_passaggi_hourly[!(STATS_passaggi_hourly$norm_conteggi == 0), ]
 STATS_passaggi_hourly <- STATS_passaggi_hourly[!(STATS_passaggi_hourly$norm_conteggi == 100), ]
-levels(STATS_passaggi_hourly$classi) <- gsub("N_","", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$classi) <- gsub("\\camion_7_5m\\b","camion < 7.5m", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$classi) <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$classi) <- gsub("autotreni","autotreni & artic.", levels(STATS_passaggi_hourly$classi))
-levels(STATS_passaggi_hourly$classi) <- gsub("auto_rimorchio","auto rimorchio", levels(STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("N_","", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("autotreni","autotreni & artic.", (STATS_passaggi_hourly$classi))
+STATS_passaggi_hourly$classi <- gsub("auto_rimorchio","auto rimorchio", (STATS_passaggi_hourly$classi))
 STATS_passaggi_hourly <- STATS_passaggi_hourly %>%
   filter(!classi %in% c("N"))  
 
 STATS_passaggi_hourly$corsia <- as.factor(STATS_passaggi_hourly$corsia)
-levels(STATS_passaggi_hourly$corsia) <- gsub("1","corsia 1", levels(STATS_passaggi_hourly$corsia))
-levels(STATS_passaggi_hourly$corsia) <- gsub("2","corsia 2", levels(STATS_passaggi_hourly$corsia))
-levels(STATS_passaggi_hourly$corsia) <- gsub("3","corsia 3", levels(STATS_passaggi_hourly$corsia))
-levels(STATS_passaggi_hourly$corsia) <- gsub("4","corsia 4", levels(STATS_passaggi_hourly$corsia))
+STATS_passaggi_hourly$corsia <- gsub("1","corsia 1", (STATS_passaggi_hourly$corsia))
+STATS_passaggi_hourly$corsia <- gsub("2","corsia 2", (STATS_passaggi_hourly$corsia))
+STATS_passaggi_hourly$corsia <- gsub("3","corsia 3", (STATS_passaggi_hourly$corsia))
+STATS_passaggi_hourly$corsia <- gsub("4","corsia 4", (STATS_passaggi_hourly$corsia))
 
 STATS_passaggi_hourly <- as.data.frame(STATS_passaggi_hourly)
 STATS_passaggi_hourly$classi <- as.character(STATS_passaggi_hourly$classi)
@@ -795,11 +798,11 @@ STATS_passaggi <- passaggi %>%
 
 STATS_passaggi$classi <- as.factor(STATS_passaggi$classi)
 # change "passaggi with "N
-levels(STATS_passaggi$classi) <- gsub("passaggi_totali","N", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("classe_di_velocita_","", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("__","_", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$direzione) <- gsub("A","--> Salerno", levels(STATS_passaggi$direzione))
-levels(STATS_passaggi$direzione) <- gsub("D","<-- Avellino", levels(STATS_passaggi$direzione))
+STATS_passaggi$classi <- gsub("passaggi_totali","N", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("classe_di_velocita_","", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("__","_", (STATS_passaggi$classi))
+STATS_passaggi$direzione <- gsub("A","--> Salerno", (STATS_passaggi$direzione))
+STATS_passaggi$direzione <- gsub("D","<-- Avellino", (STATS_passaggi$direzione))
 
 to_keep <- as.vector( STATS_passaggi$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi$classi)])
 
@@ -823,9 +826,9 @@ STATS_passaggi <- STATS_passaggi[order(-STATS_passaggi$norm_conteggi),]
 STATS_passaggi <- STATS_passaggi[!(STATS_passaggi$conteggi_totali == 0), ]
 STATS_passaggi <- STATS_passaggi[!(STATS_passaggi$norm_conteggi == 0), ]
 STATS_passaggi <- STATS_passaggi[!(STATS_passaggi$norm_conteggi == 100), ]
-levels(STATS_passaggi$classi) <- gsub("N_","", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("\\camion_7_5m\\b","camion < 7.5m", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", levels(STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("N_","", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi$classi))
 
 STATS_passaggi <- as.data.frame(STATS_passaggi)
 STATS_passaggi$classi <- as.character(STATS_passaggi$classi)
@@ -857,6 +860,100 @@ q
 ```
 
 *<br/><br/>*
+
+
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.** Numero di passaggi totali per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004) per il periodo 31/08/2017 - 18/09/2017 (come dati FCD Viasat). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi sulle due direzioni di marcia: --> Salerno e <-- Avellino."}
+
+########################
+### summary stats ######
+########################
+
+
+## get the months of observations
+DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+
+
+## filter data as the same time-range of VIASAT data
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-18")
+
+DB_selected <- DB %>%
+  filter(date < max & date > min)
+
+
+# get all names for specific classes
+all_passaggi <- names(DB_selected[grep(pattern  = "passaggi", x = names(DB_selected))])
+all_passaggi_idx <- which(names(DB_selected) %in%  names(DB_selected[grep(pattern  = "passaggi", x = names(DB))]) )
+# select only "passaggi"
+DB_passaggi <- DB_selected[all_passaggi]
+# add corsia and direzione
+DB_passaggi <- cbind(DB_passaggi, DB_selected$corsia, DB_selected$direzione)
+names(DB_passaggi) <- c(all_passaggi, "corsia", "direzione")
+# transpose data
+passaggi <- gather(DB_passaggi, "classi", "records", 1:length(all_passaggi))
+passaggi$records <- as.numeric(passaggi$records)
+
+# somma di tutti i tipi di conteggi per i passaggi di veicoli
+STATS_passaggi <- passaggi %>%
+  group_by( #corsia,
+           direzione,
+           classi) %>%
+  summarise(conteggi_totali = sum(records, na.rm = TRUE))
+
+STATS_passaggi$classi <- as.factor(STATS_passaggi$classi)
+# change "passaggi with "N
+STATS_passaggi$classi <- gsub("passaggi_totali","N", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("classe_di_velocita_","", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("__","_", (STATS_passaggi$classi))
+STATS_passaggi$direzione <- gsub("A","--> Salerno", (STATS_passaggi$direzione))
+STATS_passaggi$direzione <- gsub("D","<-- Avellino", (STATS_passaggi$direzione))
+
+to_keep <- as.vector( STATS_passaggi$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi$classi)])
+
+# remove not neccessary informations for the counts (conteggi totali)
+# only keep the "conteggi" by classe
+STATS_passaggi <- STATS_passaggi %>%
+  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_moto")) %>%
+  filter(classi %in% to_keep) %>%
+  summarise(conteggi_totali = sum(conteggi_totali))
+
+
+
+### plot passaggi #####
+#######################
+
+# q <- ggplot(data = STATS_passaggi,
+#             aes(classi, conteggi_totali, fill = direzione)) +
+#   theme_bw() +
+#   geom_bar(stat = "identity", position = position_stack()) +
+#   scale_x_discrete(limits = categories) +
+#   geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
+#             position = position_stack(0.85), size=4)+
+#   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
+#   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=11)) +
+#   theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+#   theme(axis.title.x = element_blank()) +
+#   ylab(expression(paste("numero di passaggi (a.u)"))) +
+#   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+#         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
+#   ggtitle("Numero di passaggi totali (tutti i veicoli, 2017-2018)") +
+#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
+# q
+
+
+```
+
+*<br/><br/>*
+
+
+
+
+
+
+
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5}
@@ -911,7 +1008,7 @@ passaggi$records <- as.numeric(passaggi$records)
 
 passaggi$classi <- as.factor(passaggi$classi)
 # make classe "articolati" as classe "Autotreni"
-levels(passaggi$classi) <- gsub("passaggi_totali_articolati","passaggi_totali_autotreni", levels(passaggi$classi))
+passaggi$classi <- gsub("passaggi_totali_articolati","passaggi_totali_autotreni", (passaggi$classi))
 
 
 # somma di tutti i tipi di conteggi per i passaggi di veicoli
@@ -925,11 +1022,11 @@ STATS_passaggi_monthly <- passaggi %>%
 
 STATS_passaggi_monthly$classi <- as.factor(STATS_passaggi_monthly$classi)
 # change "passaggi with "N
-levels(STATS_passaggi_monthly$classi) <- gsub("passaggi_totali","N", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$classi) <- gsub("classe_di_velocita_","", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$classi) <- gsub("__","_", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$direzione) <- gsub("A","--> Salerno", levels(STATS_passaggi_monthly$direzione))
-levels(STATS_passaggi_monthly$direzione) <- gsub("D","<-- Avellino", levels(STATS_passaggi_monthly$direzione))
+STATS_passaggi_monthly$classi <- gsub("passaggi_totali","N", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("classe_di_velocita_","", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("__","_", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$direzione <- gsub("A","--> Salerno", (STATS_passaggi_monthly$direzione))
+STATS_passaggi_monthly$direzione <- gsub("D","<-- Avellino", (STATS_passaggi_monthly$direzione))
 
 to_keep <- as.vector( STATS_passaggi_monthly$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi_monthly$classi)])
 
@@ -960,11 +1057,11 @@ STATS_passaggi_monthly <- STATS_passaggi_monthly[order(-STATS_passaggi_monthly$n
 STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$conteggi_totali == 0), ]
 STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$norm_conteggi == 0), ]
 STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$norm_conteggi == 100), ]
-levels(STATS_passaggi_monthly$classi) <- gsub("N_","", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$classi) <- gsub("\\camion_7_5m\\b","camion < 7.5m", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$classi) <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$classi) <- gsub("autotreni","autotreni & artic.", levels(STATS_passaggi_monthly$classi))
-levels(STATS_passaggi_monthly$classi) <- gsub("auto_rimorchio","auto rimorchio", levels(STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("N_","", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("autotreni","autotreni & artic.", (STATS_passaggi_monthly$classi))
+STATS_passaggi_monthly$classi <- gsub("auto_rimorchio","auto rimorchio", (STATS_passaggi_monthly$classi))
 
 STATS_passaggi_monthly <- as.data.frame(STATS_passaggi_monthly)
 STATS_passaggi_monthly$classi <- as.character(STATS_passaggi_monthly$classi)
@@ -1040,12 +1137,12 @@ STATS_passaggi <- passaggi %>%
 
 STATS_passaggi$classi <- as.factor(STATS_passaggi$classi)
 # change "passaggi with "N
-levels(STATS_passaggi$classi) <- gsub("passaggi_totali","N", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("classe_di_velocita_","", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("__","_", levels(STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("passaggi_totali","N", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("classe_di_velocita_","", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("__","_", (STATS_passaggi$classi))
 
-levels(STATS_passaggi$direzione) <- gsub("A","--> Salerno", levels(STATS_passaggi$direzione))
-levels(STATS_passaggi$direzione) <- gsub("D","<-- Avellino", levels(STATS_passaggi$direzione))
+STATS_passaggi$direzione <- gsub("A","--> Salerno", (STATS_passaggi$direzione))
+STATS_passaggi$direzione <- gsub("D","<-- Avellino", (STATS_passaggi$direzione))
 
 to_keep <- as.vector( STATS_passaggi$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi$classi)])
 
@@ -1071,22 +1168,22 @@ STATS_passaggi <- STATS_passaggi[order(-STATS_passaggi$norm_conteggi),]
 STATS_passaggi <- STATS_passaggi[!(STATS_passaggi$conteggi_totali == 0), ]
 STATS_passaggi <- STATS_passaggi[!(STATS_passaggi$norm_conteggi == 0), ]
 STATS_passaggi <- STATS_passaggi[!(STATS_passaggi$norm_conteggi == 100), ]
-levels(STATS_passaggi$classi) <- gsub("N_","", levels(STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("N_","", (STATS_passaggi$classi))
 
-levels(STATS_passaggi$classi) <- gsub("N_","", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("\\camion_7_5m\\b","camion < 7.5m", levels(STATS_passaggi$classi))
-levels(STATS_passaggi$classi) <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", levels(STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("N_","", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi$classi))
 
-levels(STATS_passaggi$classi) <- gsub("autotreni","autotreni & artic.", levels(STATS_passaggi$classi))
+STATS_passaggi$classi <- gsub("autotreni","autotreni & artic.", (STATS_passaggi$classi))
 
 STATS_passaggi <- as.data.frame(STATS_passaggi)
 STATS_passaggi$classi <- as.character(STATS_passaggi$classi)
 
 STATS_passaggi$corsia <- as.factor(STATS_passaggi$corsia)
-levels(STATS_passaggi$corsia) <- gsub("1","corsia 1 (--> Salerno)", levels(STATS_passaggi$corsia))
-levels(STATS_passaggi$corsia) <- gsub("2","corsia 2 (--> Salerno)", levels(STATS_passaggi$corsia))
-levels(STATS_passaggi$corsia) <- gsub("3","corsia 3 (<-- Avellino)", levels(STATS_passaggi$corsia))
-levels(STATS_passaggi$corsia) <- gsub("4","corsia 4 (<-- Avellino)", levels(STATS_passaggi$corsia))
+STATS_passaggi$corsia <- gsub("1","corsia 1 (--> Salerno)", (STATS_passaggi$corsia))
+STATS_passaggi$corsia <- gsub("2","corsia 2 (--> Salerno)", (STATS_passaggi$corsia))
+STATS_passaggi$corsia <- gsub("3","corsia 3 (<-- Avellino)", (STATS_passaggi$corsia))
+STATS_passaggi$corsia <- gsub("4","corsia 4 (<-- Avellino)", (STATS_passaggi$corsia))
 
 categories <- as.character( unique(STATS_passaggi$classi))
 
@@ -1679,7 +1776,7 @@ velocita$records <- as.numeric(velocita$records)
 velocita$records <-  round(velocita$records, digits = 0)
 # make "articolati" as the same class of "autotreni"
 velocita$classi <- as.factor(velocita$classi)
-levels(velocita$classi) <- gsub("__articolati","__autotreni", levels(velocita$classi))
+velocita$classi <- gsub("__articolati","__autotreni", (velocita$classi))
 
 #media di tutte le velocita' per ogni classe di veicolo di veicoli
 velocita <- velocita[complete.cases(velocita), ] # Keep only the complete rows
@@ -1693,11 +1790,11 @@ STATS_velocita <- velocita %>%
 
 STATS_velocita$classi <- as.factor(STATS_velocita$classi)
 # change the structure of some strings
-levels(STATS_velocita$classi) <- gsub("velocita__","", levels(STATS_velocita$classi))
-levels(STATS_velocita$direzione) <- gsub("A","--> Salerno", levels(STATS_velocita$direzione))
-levels(STATS_velocita$direzione) <- gsub("D","<-- Avellino", levels(STATS_velocita$direzione))
-levels(STATS_velocita$classi) <- gsub("__km_h__","_", levels(STATS_velocita$classi))
-levels(STATS_velocita$classi) <- gsub("__km_h_","", levels(STATS_velocita$classi))
+STATS_velocita$classi <- gsub("velocita__","", (STATS_velocita$classi))
+STATS_velocita$direzione <- gsub("A","--> Salerno", (STATS_velocita$direzione))
+STATS_velocita$direzione <- gsub("D","<-- Avellino", (STATS_velocita$direzione))
+STATS_velocita$classi <- gsub("__km_h__","_", (STATS_velocita$classi))
+STATS_velocita$classi <- gsub("__km_h_","", (STATS_velocita$classi))
 
 STATS_velocita$corsia <- as.factor(STATS_velocita$corsia)
 
@@ -1708,10 +1805,10 @@ STATS_velocita_2 <- STATS_velocita %>%
 STATS_velocita <- rbind(STATS_velocita_1, STATS_velocita_2)
 
 
-levels(STATS_velocita$corsia) <- gsub("1","corsia 1 (--> Salerno)", levels(STATS_velocita$corsia))
-levels(STATS_velocita$corsia) <- gsub("2","corsia 2 (--> Salerno)", levels(STATS_velocita$corsia))
-levels(STATS_velocita$corsia) <- gsub("3","corsia 3 (<-- Avellino)", levels(STATS_velocita$corsia))
-levels(STATS_velocita$corsia) <- gsub("4","corsia 4 (<-- Avellino)", levels(STATS_velocita$corsia))
+STATS_velocita$corsia <- gsub("1","corsia 1 (--> Salerno)", (STATS_velocita$corsia))
+STATS_velocita$corsia <- gsub("2","corsia 2 (--> Salerno)", (STATS_velocita$corsia))
+STATS_velocita$corsia <- gsub("3","corsia 3 (<-- Avellino)", (STATS_velocita$corsia))
+STATS_velocita$corsia <- gsub("4","corsia 4 (<-- Avellino)", (STATS_velocita$corsia))
 
 pattern_to_remove = paste(c("\\_conteggio\\b", "\\_altri\\b", "\\_camion__7_5m\\b", "\\_camion__7_5m_1\\b", "\\_auto_rimorchio\\b","\\_autobus\\b", "\\_moto\\b", "\\media\\b", "^deviazione_standard$", "\\media_armonica\\b" ), collapse = "|")
 
@@ -1722,10 +1819,10 @@ to_keep <- as.vector( STATS_velocita$classi[-grep(pattern = pattern_to_remove , 
 STATS_velocita <- STATS_velocita %>%
   filter(classi %in% to_keep) 
 
-levels(STATS_velocita$classi) <- gsub("deviazione_standard","STD", levels(STATS_velocita$classi))
-levels(STATS_velocita$classi) <- gsub("STD_autotreni","STD_autotreni & artic.", levels(STATS_velocita$classi))
-levels(STATS_velocita$classi) <- gsub("media_autotreni","media_autotreni & artic.", levels(STATS_velocita$classi))
-levels(STATS_velocita$classi) <- gsub("media_armonica_autotreni","media_armonica_autotreni & artic.", levels(STATS_velocita$classi))
+STATS_velocita$classi <- gsub("deviazione_standard","STD", (STATS_velocita$classi))
+STATS_velocita$classi <- gsub("STD_autotreni","STD_autotreni & artic.", (STATS_velocita$classi))
+STATS_velocita$classi <- gsub("media_autotreni","media_autotreni & artic.", (STATS_velocita$classi))
+STATS_velocita$classi <- gsub("media_armonica_autotreni","media_armonica_autotreni & artic.", (STATS_velocita$classi))
 
 STATS_velocita <- as.data.frame(STATS_velocita)
 STATS_velocita$velocita_medie <- round(STATS_velocita$velocita_medie, digits = 0)
@@ -1929,7 +2026,7 @@ occupazione <- occupazione[!(occupazione$records == 0), ]
 
 # make "articolati" as the same class of "autotreni"
 occupazione$classi <- as.factor(occupazione$classi)
-levels(occupazione$classi) <- gsub("__articolati","__autotreni", levels(occupazione$classi))
+occupazione$classi <- gsub("__articolati","__autotreni", (occupazione$classi))
 
 #media di tutte le occupazioni' per ogni classe di veicolo di veicoli
 occupazione <- occupazione[complete.cases(occupazione), ] # Keep only the complete rows
@@ -1941,12 +2038,12 @@ STATS_occupazione <- occupazione %>%
 
 STATS_occupazione$classi <- as.factor(STATS_occupazione$classi)
 # change the structure of some strings
-levels(STATS_occupazione$classi) <- gsub("occupazione__sec__","", levels(STATS_occupazione$classi))
-levels(STATS_occupazione$direzione) <- gsub("A","--> Salerno", levels(STATS_occupazione$direzione))
-levels(STATS_occupazione$direzione) <- gsub("D","<-- Avellino", levels(STATS_occupazione$direzione))
+STATS_occupazione$classi <- gsub("occupazione__sec__","", (STATS_occupazione$classi))
+STATS_occupazione$direzione <- gsub("A","--> Salerno", (STATS_occupazione$direzione))
+STATS_occupazione$direzione <- gsub("D","<-- Avellino", (STATS_occupazione$direzione))
 
-levels(STATS_occupazione$classi) <- gsub("\\camion__7_5m\\b","camion < 7.5m", levels(STATS_occupazione$classi))
-levels(STATS_occupazione$classi) <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", levels(STATS_occupazione$classi))
+STATS_occupazione$classi <- gsub("\\camion__7_5m\\b","camion < 7.5m", (STATS_occupazione$classi))
+STATS_occupazione$classi <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", (STATS_occupazione$classi))
 
 
 STATS_occupazione_1 <- STATS_occupazione %>%
@@ -1956,12 +2053,12 @@ STATS_occupazione_2 <- STATS_occupazione %>%
 STATS_occupazione <- rbind(STATS_occupazione_1, STATS_occupazione_2)
 
 STATS_occupazione$corsia <- as.factor(STATS_occupazione$corsia)
-levels(STATS_occupazione$corsia) <- gsub("1","corsia 1 (--> Salerno)", levels(STATS_occupazione$corsia))
-levels(STATS_occupazione$corsia) <- gsub("2","corsia 2 (--> Salerno)", levels(STATS_occupazione$corsia))
-levels(STATS_occupazione$corsia) <- gsub("3","corsia 3 (<-- Avellino)", levels(STATS_occupazione$corsia))
-levels(STATS_occupazione$corsia) <- gsub("4","corsia 4 (<-- Avellino)", levels(STATS_occupazione$corsia))
+STATS_occupazione$corsia <- gsub("1","corsia 1 (--> Salerno)", (STATS_occupazione$corsia))
+STATS_occupazione$corsia <- gsub("2","corsia 2 (--> Salerno)", (STATS_occupazione$corsia))
+STATS_occupazione$corsia <- gsub("3","corsia 3 (<-- Avellino)", (STATS_occupazione$corsia))
+STATS_occupazione$corsia <- gsub("4","corsia 4 (<-- Avellino)", (STATS_occupazione$corsia))
 
-levels(STATS_occupazione$classi) <- gsub("autotreni","autotreni & artic.", levels(STATS_occupazione$classi))
+STATS_occupazione$classi <- gsub("autotreni","autotreni & artic.", (STATS_occupazione$classi))
 
 STATS_occupazione <- as.data.frame(STATS_occupazione)
 STATS_occupazione$occupazione_media <- round(STATS_occupazione$occupazione_media, digits = 0)
@@ -2029,24 +2126,24 @@ occupazione <- occupazione[!(occupazione$records == 0), ]
 
 # make "articolati" as the same class of "autotreni"
 occupazione$classi <- as.factor(occupazione$classi)
-levels(occupazione$classi) <- gsub("__articolati","__autotreni", levels(occupazione$classi))
+occupazione$classi <- gsub("__articolati","__autotreni", (occupazione$classi))
 
 
 # change the structure of some strings
-levels(occupazione$classi) <- gsub("occupazione__sec__","", levels(occupazione$classi))
-levels(occupazione$direzione) <- gsub("A","--> Salerno", levels(occupazione$direzione))
-levels(occupazione$direzione) <- gsub("D","<-- Avellino", levels(occupazione$direzione))
+occupazione$classi <- gsub("occupazione__sec__","", (occupazione$classi))
+occupazione$direzione <- gsub("A","--> Salerno", (occupazione$direzione))
+occupazione$direzione <- gsub("D","<-- Avellino", (occupazione$direzione))
 
-levels(occupazione$classi) <- gsub("\\camion__7_5m\\b","camion < 7.5m", levels(occupazione$classi))
-levels(occupazione$classi) <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", levels(occupazione$classi))
+occupazione$classi <- gsub("\\camion__7_5m\\b","camion < 7.5m", (occupazione$classi))
+occupazione$classi <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", (occupazione$classi))
 
 occupazione$corsia <- as.factor(occupazione$corsia)
-levels(occupazione$corsia) <- gsub("1","corsia 1", levels(occupazione$corsia))
-levels(occupazione$corsia) <- gsub("2","corsia 2", levels(occupazione$corsia))
-levels(occupazione$corsia) <- gsub("3","corsia 3", levels(occupazione$corsia))
-levels(occupazione$corsia) <- gsub("4","corsia 4", levels(occupazione$corsia))
+occupazione$corsia <- gsub("1","corsia 1", (occupazione$corsia))
+occupazione$corsia <- gsub("2","corsia 2", (occupazione$corsia))
+occupazione$corsia <- gsub("3","corsia 3", (occupazione$corsia))
+occupazione$corsia <- gsub("4","corsia 4", (occupazione$corsia))
 
-levels(occupazione$classi) <- gsub("autotreni","autotreni & artic.", levels(occupazione$classi))
+occupazione$classi <- gsub("autotreni","autotreni & artic.", (occupazione$classi))
 
 
 occupazione <- as.data.frame(occupazione)
@@ -2115,24 +2212,23 @@ occupazione <- occupazione[!(occupazione$records == 0), ]
 
 # make "articolati" as the same class of "autotreni"
 occupazione$classi <- as.factor(occupazione$classi)
-levels(occupazione$classi) <- gsub("__articolati","__autotreni", levels(occupazione$classi))
+occupazione$classi <- gsub("__articolati","__autotreni", (occupazione$classi))
 
 
 # change the structure of some strings
-levels(occupazione$classi) <- gsub("occupazione__sec__","", levels(occupazione$classi))
-levels(occupazione$direzione) <- gsub("A","--> Salerno", levels(occupazione$direzione))
-levels(occupazione$direzione) <- gsub("D","<-- Avellino", levels(occupazione$direzione))
-
-levels(occupazione$classi) <- gsub("\\camion__7_5m\\b","camion < 7.5m", levels(occupazione$classi))
-levels(occupazione$classi) <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", levels(occupazione$classi))
+occupazione$classi <- gsub("occupazione__sec__","", (occupazione$classi))
+occupazione$direzione <- gsub("A","--> Salerno", (occupazione$direzione))
+occupazione$direzione <- gsub("D","<-- Avellino", (occupazione$direzione))
+occupazione$classi <- gsub("\\camion__7_5m\\b","camion < 7.5m", (occupazione$classi))
+occupazione$classi <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", (occupazione$classi))
 
 occupazione$corsia <- as.factor(occupazione$corsia)
-levels(occupazione$corsia) <- gsub("1","corsia 1", levels(occupazione$corsia))
-levels(occupazione$corsia) <- gsub("2","corsia 2", levels(occupazione$corsia))
-levels(occupazione$corsia) <- gsub("3","corsia 3", levels(occupazione$corsia))
-levels(occupazione$corsia) <- gsub("4","corsia 4", levels(occupazione$corsia))
+occupazione$corsia <- gsub("1","corsia 1", (occupazione$corsia))
+occupazione$corsia <- gsub("2","corsia 2", (occupazione$corsia))
+occupazione$corsia <- gsub("3","corsia 3", (occupazione$corsia))
+occupazione$corsia <- gsub("4","corsia 4", (occupazione$corsia))
 
-levels(occupazione$classi) <- gsub("autotreni","autotreni & artic.", levels(occupazione$classi))
+occupazione$classi <- gsub("autotreni","autotreni & artic.", (occupazione$classi))
 
 
 occupazione <- as.data.frame(occupazione)
@@ -2212,7 +2308,7 @@ occupazione <- occupazione[!(occupazione$records == 0), ]
 
 # make "articolati" as the same class of "autotreni"
 occupazione$classi <- as.factor(occupazione$classi)
-levels(occupazione$classi) <- gsub("__articolati","__autotreni", levels(occupazione$classi))
+occupazione$classi <- gsub("__articolati","__autotreni", (occupazione$classi))
 
 #media di tutte le occupazioni' per ogni classe di veicolo di veicoli
 occupazione <- occupazione[complete.cases(occupazione), ] # Keep only the complete rows
@@ -2225,20 +2321,20 @@ STATS_occupazione_hourly <- occupazione %>%
 
 STATS_occupazione_hourly$classi <- as.factor(STATS_occupazione_hourly$classi)
 # change the structure of some strings
-levels(STATS_occupazione_hourly$classi) <- gsub("occupazione__sec__","", levels(STATS_occupazione_hourly$classi))
-levels(STATS_occupazione_hourly$direzione) <- gsub("A","--> Salerno", levels(STATS_occupazione_hourly$direzione))
-levels(STATS_occupazione_hourly$direzione) <- gsub("D","<-- Avellino", levels(STATS_occupazione_hourly$direzione))
+STATS_occupazione_hourly$classi <- gsub("occupazione__sec__","", (STATS_occupazione_hourly$classi))
+STATS_occupazione_hourly$direzione <- gsub("A","--> Salerno", (STATS_occupazione_hourly$direzione))
+STATS_occupazione_hourly$direzione <- gsub("D","<-- Avellino", (STATS_occupazione_hourly$direzione))
 
-levels(STATS_occupazione_hourly$classi) <- gsub("\\camion__7_5m\\b","camion < 7.5m", levels(STATS_occupazione_hourly$classi))
-levels(STATS_occupazione_hourly$classi) <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", levels(STATS_occupazione_hourly$classi))
+STATS_occupazione_hourly$classi <- gsub("\\camion__7_5m\\b","camion < 7.5m", (STATS_occupazione_hourly$classi))
+STATS_occupazione_hourly$classi <- gsub("\\camion__7_5m_1\\b", "camion > 7.5m", (STATS_occupazione_hourly$classi))
 
 STATS_occupazione_hourly$corsia <- as.factor(STATS_occupazione_hourly$corsia)
-levels(STATS_occupazione_hourly$corsia) <- gsub("1","corsia 1", levels(STATS_occupazione_hourly$corsia))
-levels(STATS_occupazione_hourly$corsia) <- gsub("2","corsia 2", levels(STATS_occupazione_hourly$corsia))
-levels(STATS_occupazione_hourly$corsia) <- gsub("3","corsia 3", levels(STATS_occupazione_hourly$corsia))
-levels(STATS_occupazione_hourly$corsia) <- gsub("4","corsia 4", levels(STATS_occupazione_hourly$corsia))
+STATS_occupazione_hourly$corsia <- gsub("1","corsia 1", (STATS_occupazione_hourly$corsia))
+STATS_occupazione_hourly$corsia <- gsub("2","corsia 2", (STATS_occupazione_hourly$corsia))
+STATS_occupazione_hourly$corsia <- gsub("3","corsia 3", (STATS_occupazione_hourly$corsia))
+STATS_occupazione_hourly$corsia <- gsub("4","corsia 4", (STATS_occupazione_hourly$corsia))
 
-levels(STATS_occupazione_hourly$classi) <- gsub("autotreni","autotreni & artic.", levels(STATS_occupazione_hourly$classi))
+STATS_occupazione_hourly$classi <- gsub("autotreni","autotreni & artic.", (STATS_occupazione_hourly$classi))
 STATS_occupazione_hourly <- STATS_occupazione_hourly %>%
   filter(!classi %in% c("auto_rimorchio"))  
 
@@ -2327,4 +2423,95 @@ p <- ggplot(data = STATS_occupazione_hourly_AVELLINO,
 
 *<br/><br/>*
 
+
+
+
+  
+  
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=7, fig.cap ="**Figura BBB.** Media delle velocita' medie ed armoniche per classe di autoveicoli e per corsia di marcia sul tratto dell'autostrada A2 (km5+004)."}
+
+
+###############################################
+### distribuzione delle velocita' totali ######
+###############################################
+
+
+## get the months of observations
+DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+
+## filter data as the same time-range of VIASAT data
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-18")
+
+velocita_ANAS <- DB %>%
+  filter(date < max & date > min) %>% 
+  select(date, velocita__media__km_h_)
+names(velocita_ANAS) <- c("date", "velocità")
+
+### save data
+write.csv(velocita_ANAS, "velocita_ANAS.csv")
+
+p <- velocita_ANAS %>%
+    ggplot(aes((`velocità`))) +
+    geom_density(alpha = 0.5) +
+    stat_function(fun = dnorm, args = list(mean = mean(velocita_ANAS$velocità),
+                                           sd = sd(velocita_ANAS$velocità)), colour = "red") +  ## fit with Gaussian
+    # scale_x_continuous(trans='log10') +
+    guides(fill=guide_legend(title="tipo veicolo")) +
+    theme_bw() +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+    ylab("densità (u.a)") +
+    # ylab("conteggi") +
+    xlab("velocità (km/h)") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+   geom_vline(xintercept=mean(  velocita_ANAS$velocità), color="red", linetype="dashed", size=0.5) +
+    ggtitle("Distribuzione delle velocità istantanee (ANAS)") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+p
+
+
+```
+
+
+*<br/><br/>*
+  
+  
+
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella AAA.**"}
+
+
+
+# estimate paramters
+library(MASS)
+library(fitdistrplus)
+## fit with a "gaussian/normal" distribution
+fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$velocità, "norm")
+class(fit_ANAS) <- c("fitdist", "fitdistr") 
+fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
+names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
+
+
+
+fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS)) 
+fit_ANAS <- fit_ANAS %>%
+  filter(`tipo veicolo` == "veicoli ANAS")
+fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
+
+
+Caption <- paste0("**Tabella 3.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee** con una distribuzione gaussiana. I parametri di valore medio e di deviazione standard sono riportati per automobli e veicoli pesanti.")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(fit_ANAS, emphasize.strong.cols = 1, missing = "")
+
+````
+
+  
 
