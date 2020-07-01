@@ -15,7 +15,11 @@ output:
 
 *<br/><br/>*
 
-*<br/><br/>*
+## 1. Rete stradale
+
+La sezione stradale sull''autostrada **A2**, lungo il tratto **671 (A2, Km 5+004, Latitudine = 40.7269766666667, Longitudine = 14.7757683333333)** è stato identificato dalla rete OpenStreetMap e convertito in forma di grafo digitale (**Figura 1**). Le coppie di nodi *(32048592, 246509515), (246509515, 1110091820)* verso la direzione **Avellino** e *(1110091823,25844069), (25844069, 25844113)* verso la direzione **Salerno** definiscono gli archi stradali sui quali è stato stimato il numero di passaggi ottenuti dai Floating Car Data (FCD) di Viasat.
+
+
 
 ```{r, echo=FALSE, fig.cap="**Figura 1**.Postazione Tratto dell'autostrada A2 ottenuta da OpenStreetMap. Archi e nodi sono stati individuati in corrispondezna della postazione ANAS  671 (A2, Km 5+004).", out.width = '70%'}
 knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_Salerno.png")
@@ -43,6 +47,7 @@ library(grid)
 library(gridExtra)
 library(broom)
 library(tidyr)
+library(RColorBrewer)
 options(scipen=5)
 
 
@@ -54,6 +59,12 @@ data <- data %>%
   mutate(timedate = ymd_hms(timedate))
 data$vehtype <- gsub(1, "car", (data$vehtype))
 data$vehtype <- gsub(2, "fleet", (data$vehtype))
+
+data_car <- data %>%
+  filter(vehtype == 'car')
+data_fleet <- data %>%
+  filter(vehtype == 'fleet')
+
 
 # (32048592, 246509515), (246509515, 1110091820)  --> Avellino
 #  (1110091823,25844069), (25844069, 25844113)  <--- Salerno
@@ -81,6 +92,20 @@ pander(mapmatching_data, emphasize.strong.cols = 1, missing = "")
 
 *<br/><br/>*
 
+## 2. Dati Viasat
+
+
+I dati Viasat sono caratterizzati dalla presenza di un identificativo anonimo del veicolo **idterm**, di un *orario* (**timedate**),  della distanza progressiva percorsa da ogni veicolo (**progressive**), dal un segnale *on/off* (**panel**) che indica se il motore è acceso o spento. Infine, viene anche riportata l'*accuratezza* del dato GPS (**grade**) il cui valore varia da *1* (piu' accurato) a *50* (meno accurato). 
+
+Abbiamo analizzato una serie temporale di FCD Viasat per il periodo 1-18 Settembre 2017. Questo periodo coincide con quello in cui abbiamo a disposizione delle osservazioni di traffico effettuate da ANAS sulla stessa sezione stradale. E' quindi stato possibile fare un confronto. Per il periodo 1-18 Settembre 2018 abbiamo registrato un numero di **`r length(unique(data$idterm))`** veicoli che sono passati sulla sezione in esame dell'autostrada A2. Di questi veicoli, **`r length(unique(data_car$idterm))`** sono stati identificati come **automobili**, mentre **`r length(unique(data_fleet$idterm))`** sono stati identificati come **flotta** includendo anche veicoli pesanti (**Figura 2**). Quindi i veicoli di flotta rappresentanto circa il **17%** del dataset di dati. 
+
+
+## 3. Map-matching e conteggio di passaggi
+
+Per stabilire su quale arco un veicolo (FCD data) è transitato, abbiamo sviluppato un algoritmo di *map-matching*. L'algoritmo consiste nell'analisi di tutte le tracce GPS per singolo veicolo e dell'individuazione dei suoi viaggi in un determinato periodo temporale. Per ogni viaggio, che corrisponde ad una sequenza di traccie GPS, l'algoritmo ha individuato una possibile sequenza di nodi, e quindi di archi percorsi. 
+** Tabella 1** mostra una parte rilevante dell'output di map-matching con l'indicazione del nodo di origine **u** e del nodo di destinazione **v** per ogni arco stradale ed ogni orario (**timedate**) in cui l'arco viene percorso. L'ordine dei nodi permette inoltre di determinare la direzione di marcia di ogni traccia. Infine, e' stato riportato il tipo di veicolo (automobile o flotta) da cui e' anche possible determinare la sua portata massima. Ogni coppia di nodi rappresenta il passaggio di un veicolo sopra un determianto arco. Il conteggio totale dei passaggi per tipo di veicolo e direzione di marcia si ottiene sommando il numero di volte che un arco viene attraverstato nell'intervallo temporale complessivo. 
+
+
 
 ```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 2.**"}
 
@@ -97,7 +122,7 @@ total_counts_direzione$`%_VIASAT` <- (total_counts_direzione$count_VIASAT/total_
 names(total_counts_direzione) <- c("direzione",  "velocità", "passaggi VIASAT", "passaggi ANAS", "%(VIASAT/ANAS)")
 total_counts_direzione$`%(VIASAT/ANAS)` <- round(total_counts_direzione$`%(VIASAT/ANAS)`, digits = 2)
 
-Caption <- paste0("**Tabella 2.** Numero totale di passaggi di autoveicoli sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017.")
+Caption <- paste0("**Tabella 2.** Numero totale di passaggi di autoveicoli sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017. Confronto con dati ANAS per lo stesso periodo temporale.")
 set.caption(Caption)
 panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
 panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
@@ -107,6 +132,8 @@ pander(total_counts_direzione, emphasize.strong.cols = 1, missing = "")
 
 ```
 
+Mentre le osservazioni ANAS sono riferite a conteggi in tempo reale di tutti i veicoli,i dati Viasat rappresentano solo una piccola frazione dei veicoli transitati sulla sezione stradale in esame.  
+Come ripotato in **Tabella 3**, il mumero totale di passaggi di dati Viasat rappresenta circa il **3%** dei dati ANAS su entrambe le direzioni di marcia.
 
 *<br/><br/>*
 
@@ -153,6 +180,10 @@ q
 
 ````
 
+*<br/><br/>*
+
+L'andamento del numero di passaggi per giorno della settimana e per tipo di veicolo è riportato in **Figura 3**. Per i veicoli di flotta, i dati Viasat mostrano che i giorni di Sabato e Domenica sono quelli con il minore numero di passaggi. Questo risultato è in linea con i conteggi totali di mezzi pesanti osservato per i dati ANAS. Tuttavia, per le automobili, non è stato osservato lo stesso trend temporale tra i dati Viasat ed i dati ANAS. Questo significa che i dati Viasat di flotta sono più rappresentativi dei dati Viasat delle automobili se usati come alternativa ai dati ANAS. Tuttavia il trend orario del numero di passaggi (**Figura 4**) rivela che i veicoli analizzati seguono l'andamento tipico di una giornata lavorativa con un mumero elevato di passaggi verso le 09:00 e verso le 18:00-19:00. Questi passaggi sono probabilmente associati a viaggi casa-lavoro che vengono effettuati giornalmente.  
+
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 3.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi."}
 
@@ -195,13 +226,17 @@ VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
   left_join(all_vehtype, by = c("direzione", "day"))
 
 VIASAT_STATS_passaggi_daily <- as.data.frame(VIASAT_STATS_passaggi_daily)
-
 ## get number all all vehicles by pecentage
 # normalize all "passaggi" to the conteggi_totali
-VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
-  group_by(direzione,
-           day) %>%
-  mutate(norm_conteggi = (conteggi_per_tipo/conteggi_totali)*100)
+VIASAT_STATS_passaggi_daily$norm_conteggi <- (VIASAT_STATS_passaggi_daily$conteggi_per_tipo/VIASAT_STATS_passaggi_daily$conteggi_totali)*100
+
+  # mutate(norm_conteggi = (conteggi_per_tipo/conteggi_totali)*100)
+
+
+# VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
+#   group_by(direzione,
+#            day) %>%
+#   mutate(norm_conteggi = (conteggi_per_tipo/conteggi_totali)*100)
 VIASAT_STATS_passaggi_daily$norm_conteggi <- round(VIASAT_STATS_passaggi_daily$norm_conteggi, digits = 0)
 
 
@@ -226,7 +261,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_daily,
     # facet_wrap( ~ vehtype, ncol = 4) +
     facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    ylim(0, 4500) +
+    ylim(0, 6000) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -312,6 +347,10 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 
 
 *<br/><br/>*
+
+## 4. Distribuzione delle velocità
+
+La distribuzione delle velocità istantanee dei veicoli è rappresentata in **Figura 6**. Per entrambe le tipologie di veicoli (automobili e flotta) si e' cercato di modelizzare le distribuzioni con una curva Gaussiana.  
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)"}
@@ -423,9 +462,24 @@ velocita_ANAS <-  read.csv(paste0("D:/ENEA_CAS_WORK/SENTINEL/ANAS/velocita_ANAS.
 
 names(velocita_ANAS)[names(velocita_ANAS) == 'velocità'] <- 'speed'
 
+AAA <- data.frame(observation = "ANAS", velocità = velocita_ANAS$speed)
+BBB <- data.frame(observation = "VIASAT", velocità = data$speed)
+ZZZ <- rbind(AAA, BBB)
+colorData <- brewer.pal(length(unique(ZZZ$observation)), "Set1")
+# Replace first color first wanted grey
+colorData[1] <- "red"
+colors <- c(
+  "ANAS" = "red",
+  "VIASAT" = "blue"
+)
+
+
+
 p <- ggplot(data =velocita_ANAS,  aes((x=speed))) +
-    geom_density(alpha = 0.5) +
-   geom_density(data = data) +
+    geom_density(alpha = 0.5, size=2, colour = "red") +
+    geom_density(data = data, size=2, colour = "blue") +
+    geom_density(aes(velocità, colour=factor(observation)), size=2, data=ZZZ) +
+    scale_color_manual(values = colorData, name = "") +
     stat_function(fun = dnorm, args = list(mean = mean(velocita_ANAS$speed),
                                            sd = sd(velocita_ANAS$speed)), colour = "red") + 
     stat_function(fun = dnorm, args = list(mean = mean(data$speed),
@@ -444,7 +498,7 @@ p <- ggplot(data =velocita_ANAS,  aes((x=speed))) +
               size=0.5) +
    geom_vline(xintercept=mean(  data$speed), color="blue", linetype="dashed",
               size=0.5) +
-    ggtitle("Distribuzione delle velocità istantanee (ANAS; 1-18 Settembre 2017)") +
+    ggtitle("Distribuzione delle velocità istantanee (ANAS & VIASAT; 1-18 Settembre 2017)") +
     theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
 p
 
