@@ -15,7 +15,7 @@ output:
 
 ## 1. Serie temporale di conteggi di veicoli
 
-Di seguito riportiamo alcune serie temporali per il conteggio dei veicoli sulle corsie dell'autostrada **A2**, sul tratto **671 (A2, Km 5+004, Latitudine = 40.7269766666667, Longitudine = 14.7757683333333)** in entrambe le direzioni: verso *Salerno* (ascendente) e verso *Avellino* (discendente). I conteggi si riferiscono al periodo **2017-2018** **(Figura 1a)**
+Di seguito riportiamo alcune serie temporali per il conteggio dei veicoli sulle corsie dell'autostrada **A2**, sul tratto **671 (A2, Km 5+004, Latitudine = 40.7269766666667, Longitudine = 14.7757683333333)** in entrambe le direzioni: verso *Salerno* (ascendente) e verso *Avellino* (discendente). I conteggi si riferiscono al periodo **1-18 Settembre 2017** **(Figura 1a)**
 
 *<br/><br/>*
 
@@ -53,6 +53,8 @@ library(webshot)
 library(ggrepel)
 library(openair)
 library(widgetframe)
+library(grid)
+library(gridExtra)
 options(scipen=5)
 
 # saving the original graphical parameters
@@ -78,6 +80,11 @@ DB_2018[1:8, ][names(DB_2018) == 'Passaggi.Totali'] <- 0
 
 # Bind and perform data cleaning
 DB <- rbind(DB_2017, DB_2018)
+# min <- as.Date("2017-08-31") 
+# max <- as.Date("2017-09-18")
+# 
+# DB_selected <- DB %>%
+#   filter(date < max & date > min)
 
 
 headers <- names(DB)
@@ -110,6 +117,17 @@ DB <- rbind(DB1, DB2)
 ## A2 Direzione Salerno (Ascendente)
 
 names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
+
+#########################################################################
+## filter data within the same time range of Viasat data #####
+
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-19")
+DB <- DB %>%
+  filter(date < max & date > min)
+
+
+
 
 Corsia_1A <- DB %>%
   select(date,
@@ -329,8 +347,8 @@ Daily_All_Corsie_DISCENDENTE <- data.frame(timeAverage(mydata   = All_Corsie_DIS
                                     avg.time   = "day", statistic  = "sum"))
             #start.date = round(min(DF$General$date, na.rm = TRUE), units = "hours"), 
             # end.date   = round(max(DF$General$date, na.rm = TRUE), units = "hours")))
-Daily_All_Corsie_DISCENDENTE <- Daily_All_Corsie_DISCENDENTE %>%
-  filter(date !=  as.Date("2017-10-29 UTC"))
+# Daily_All_Corsie_DISCENDENTE <- Daily_All_Corsie_DISCENDENTE %>%
+#   filter(date !=  as.Date("2017-10-29 UTC"))
                 
 
 # Build timeseries for plots
@@ -426,7 +444,7 @@ STATS_passaggi_daily <- passaggi %>%
            direzione,
            classi,
            day) %>%
-  summarise(conteggi_totali = sum(records, na.rm = TRUE))
+  summarise(conteggi_totali = mean(records, na.rm = TRUE))
 
 
 STATS_passaggi_daily$classi <- as.factor(STATS_passaggi_daily$classi)
@@ -448,7 +466,7 @@ STATS_passaggi_daily <- STATS_passaggi_daily %>%
 #   filter(!classi %in% c("N_conteggio", "N_altri", "N_camion_7_5m", "N_camion_7_5m_1", "N_auto_rimorchio",
 #                         "N_autobus", "N_moto"))  
 STATS_passaggi_daily <- STATS_passaggi_daily %>%
-  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio"))  
+  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_autobus", "N_moto"))  
 
 STATS_passaggi_daily <- as.data.frame(STATS_passaggi_daily)
 
@@ -503,7 +521,7 @@ p <- ggplot(data = STATS_passaggi_daily_SALERNO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, col = "#ffffff",  vjust = 1) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (2017-2018)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (ANAS, 1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -520,26 +538,26 @@ Un'analisi piu' approfondita e' stata condotta osservando le somme dei passaggi 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4b.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi nella direzione verso Salerno."}
 
 
-p <- ggplot(data = STATS_passaggi_daily_SALERNO,
-              aes(day, conteggi_totali, fill = day)) + guides(fill=FALSE) +
-    geom_bar(stat = "identity") + facet_wrap( ~ classi, ncol = 4) +
-    guides(fill=FALSE) +
-    ylim(0, 1100000) +
-    theme_bw() +
-    theme( strip.text = element_text(size = 13)) +
-    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
-    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
-    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
-    ylab("numero di passaggi") +            # Set y-axis label
-    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
-          axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
-    xlab("giorno settimana") +            # Set y-axis label
-    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
-          axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
-    geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (2017-2018)") + 
-    theme(plot.title = element_text(lineheight=.8, face="bold"))
-  p
+# p <- ggplot(data = STATS_passaggi_daily_SALERNO,
+#               aes(day, conteggi_totali, fill = day)) + guides(fill=FALSE) +
+#     geom_bar(stat = "identity") + facet_wrap( ~ classi, ncol = 4) +
+#     guides(fill=FALSE) +
+#     ylim(0, 500) +
+#     theme_bw() +
+#     theme( strip.text = element_text(size = 13)) +
+#     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+#     theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+#     theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+#     ylab("numero di passaggi") +            # Set y-axis label
+#     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+#           axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
+#     xlab("giorno settimana") +            # Set y-axis label
+#     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+#           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
+#     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
+#     ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (1-18 Settembre 2017)") + 
+#     theme(plot.title = element_text(lineheight=.8, face="bold"))
+#   p
 
 
 ```
@@ -575,7 +593,7 @@ p <- ggplot(data = STATS_passaggi_daily_AVELLINO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, col = "#ffffff",  vjust = 1) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (2017-2018)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -591,26 +609,26 @@ p <- ggplot(data = STATS_passaggi_daily_AVELLINO,
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4d.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi nella direzione verso Avellino"}
 
 
-p <- ggplot(data = STATS_passaggi_daily_AVELLINO,
-              aes(day, conteggi_totali, fill = day)) + guides(fill=FALSE) +
-    geom_bar(stat = "identity") + facet_wrap( ~ classi, ncol = 4) +
-    guides(fill=FALSE) +
-    ylim(0, 1100000) +
-    theme_bw() +
-    theme( strip.text = element_text(size = 13)) +
-    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
-    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
-    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
-    ylab("numero di passaggi") +            # Set y-axis label
-    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
-          axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
-    xlab("giorno settimana") +            # Set y-axis label
-    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
-          axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
-    geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (2017-2018)") + 
-    theme(plot.title = element_text(lineheight=.8, face="bold"))
-  p
+# p <- ggplot(data = STATS_passaggi_daily_AVELLINO,
+#               aes(day, conteggi_totali, fill = day)) + guides(fill=FALSE) +
+#     geom_bar(stat = "identity") + facet_wrap( ~ classi, ncol = 4) +
+#     guides(fill=FALSE) +
+#     ylim(0, 500) +
+#     theme_bw() +
+#     theme( strip.text = element_text(size = 13)) +
+#     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+#     theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+#     theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+#     ylab("numero di passaggi") +            # Set y-axis label
+#     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+#           axis.text.y  = element_text(angle=0, vjust=0.5, size=11)) +
+#     xlab("giorno settimana") +            # Set y-axis label
+#     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+#           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
+#     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
+#     ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (1-18 Settembre 2017)") + 
+#     theme(plot.title = element_text(lineheight=.8, face="bold"))
+#   p
 
 
 ```
@@ -634,7 +652,7 @@ STATS_passaggi_hourly <- passaggi %>%
            direzione,
            classi,
            hour) %>%
-  summarise(conteggi_totali = sum(records, na.rm = TRUE))
+  summarise(conteggi_totali = mean(records, na.rm = TRUE))
 
 
 STATS_passaggi_hourly$classi <- as.factor(STATS_passaggi_hourly$classi)
@@ -652,7 +670,7 @@ to_keep <- as.vector( STATS_passaggi_hourly$classi[-grep(pattern  = "\\_km_h\\b"
 STATS_passaggi_hourly <- STATS_passaggi_hourly %>%
   filter(classi %in% to_keep) 
 STATS_passaggi_hourly <- STATS_passaggi_hourly %>%
-  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio"))  
+  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_autobus", "N_moto"))  
 
 STATS_passaggi_hourly <- as.data.frame(STATS_passaggi_hourly)
 
@@ -717,7 +735,7 @@ p <- ggplot(data = STATS_passaggi_hourly_SALERNO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=0, vjust=0.5, size=8, hjust = 0.5)) + # 
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi per ora della giornata (--> Salerno) (2017-2018)") + 
+    ggtitle("Numero totale di passaggi per ora della giornata (--> Salerno) (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -756,7 +774,7 @@ p <- ggplot(data = STATS_passaggi_hourly_AVELLINO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=0, vjust=0.5, size=8, hjust = 0.5)) + # hjust = 0.5
    scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi per ora della giornata (<-- Avellino) (2017-2018)") + 
+    ggtitle("Numero totale di passaggi per ora della giornata (<-- Avellino) (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -808,8 +826,9 @@ to_keep <- as.vector( STATS_passaggi$classi[-grep(pattern  = "\\_km_h\\b", x = S
 
 # remove not neccessary informations for the counts (conteggi totali)
 # only keep the "conteggi" by classe
+
 STATS_passaggi <- STATS_passaggi %>%
-  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio")) %>%
+   filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_autobus", "N_moto")) %>%
   filter(classi %in% to_keep)
 
 ## get number all all vehicles by pecentage
@@ -835,6 +854,19 @@ STATS_passaggi$classi <- as.character(STATS_passaggi$classi)
 
 categories <- as.character( unique(STATS_passaggi$classi))
 
+STATS_passaggi_auto <- STATS_passaggi %>%
+  group_by(direzione) %>%
+  filter(classi == "auto") 
+
+STATS_passaggi$classi
+
+STATS_passaggi_pesanti <- STATS_passaggi %>%
+  group_by(direzione) %>%
+  filter(classi %in% c( "autotreni" ,    "furgoni" , "articolati",       "camion > 7.5m",
+  "camion < 7.5m")) %>%
+  summarize(somma = sum(conteggi_totali))
+
+
 ### plot passaggi #####
 #######################
 
@@ -852,7 +884,7 @@ q <- ggplot(data = STATS_passaggi,
   ylab(expression(paste("numero di passaggi (a.u)"))) +
   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
-  ggtitle("Numero di passaggi totali (tutti i veicoli, 2017-2018)") +
+  ggtitle("Numero di passaggi totali (tutti i veicoli, 1-18 Settembre 2017)") +
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
 q
 
@@ -861,236 +893,112 @@ q
 
 *<br/><br/>*
 
-
-
-
-
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.** Numero di passaggi totali per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004) per il periodo 31/08/2017 - 18/09/2017 (come dati FCD Viasat). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi sulle due direzioni di marcia: --> Salerno e <-- Avellino."}
-
-########################
-### summary stats ######
-########################
-
-
-## get the months of observations
-DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
-
-
-## filter data as the same time-range of VIASAT data
-min <- as.Date("2017-08-31") 
-max <- as.Date("2017-09-18")
-
-DB_selected <- DB %>%
-  filter(date < max & date > min)
-
-
-# get all names for specific classes
-all_passaggi <- names(DB_selected[grep(pattern  = "passaggi", x = names(DB_selected))])
-all_passaggi_idx <- which(names(DB_selected) %in%  names(DB_selected[grep(pattern  = "passaggi", x = names(DB))]) )
-# select only "passaggi"
-DB_passaggi <- DB_selected[all_passaggi]
-# add corsia and direzione
-DB_passaggi <- cbind(DB_passaggi, DB_selected$corsia, DB_selected$direzione)
-names(DB_passaggi) <- c(all_passaggi, "corsia", "direzione")
-# transpose data
-passaggi <- gather(DB_passaggi, "classi", "records", 1:length(all_passaggi))
-passaggi$records <- as.numeric(passaggi$records)
-
-# somma di tutti i tipi di conteggi per i passaggi di veicoli
-STATS_passaggi <- passaggi %>%
-  group_by( #corsia,
-           direzione,
-           classi) %>%
-  summarise(conteggi_totali = sum(records, na.rm = TRUE))
-
-STATS_passaggi$classi <- as.factor(STATS_passaggi$classi)
-# change "passaggi with "N
-STATS_passaggi$classi <- gsub("passaggi_totali","N", (STATS_passaggi$classi))
-STATS_passaggi$classi <- gsub("classe_di_velocita_","", (STATS_passaggi$classi))
-STATS_passaggi$classi <- gsub("__","_", (STATS_passaggi$classi))
-STATS_passaggi$direzione <- gsub("A","--> Salerno", (STATS_passaggi$direzione))
-STATS_passaggi$direzione <- gsub("D","<-- Avellino", (STATS_passaggi$direzione))
-
-to_keep <- as.vector( STATS_passaggi$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi$classi)])
-
-# remove not neccessary informations for the counts (conteggi totali)
-# only keep the "conteggi" by classe
-STATS_passaggi <- STATS_passaggi %>%
-  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_moto")) %>%
-  filter(classi %in% to_keep) %>%
-  summarise(conteggi_totali = sum(conteggi_totali))
-
-
-
-### plot passaggi #####
-#######################
-
-# q <- ggplot(data = STATS_passaggi,
-#             aes(classi, conteggi_totali, fill = direzione)) +
-#   theme_bw() +
-#   geom_bar(stat = "identity", position = position_stack()) +
-#   scale_x_discrete(limits = categories) +
-#   geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
-#             position = position_stack(0.85), size=4)+
-#   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
-#   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=11)) +
-#   theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
-#   theme(axis.title.x = element_blank()) +
-#   ylab(expression(paste("numero di passaggi (a.u)"))) +
-#   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
-#         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
-#   ggtitle("Numero di passaggi totali (tutti i veicoli, 2017-2018)") +
-#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
-# q
-
-
-```
-
-*<br/><br/>*
-
-
-
-
-
-
-
-
-
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5}
-
-
-# ### plot passaggi by % pecentage #####
-# ######################################
-# 
-# q <- ggplot(data = STATS_passaggi, 
-#             aes(classi, norm_conteggi, fill = direzione)) +
-#   theme_bw() +
-#   geom_bar(stat = "identity", position = position_stack()) +
-#   scale_x_discrete(limits = categories) + 
-#   geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
-#             position = position_stack(0.85), size=4)+
-#   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
-#   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=11)) +
-#   theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
-#   theme(axis.title.x = element_blank()) +                                     
-#   ylab(expression(paste("percentuale di passaggi (%)"))) + 
-#   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
-#         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
-#   ggtitle("Passaggi totali relativi (tutti i veicoli - 2017-2018)") + 
-#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5)) 
-# q
-
-
-```
-
-
-
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=8,  fig.cap ="**Figura 6.** Numero mensile di passaggi totali per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004). I numeri all'interno del grafico indicano la distribuzione percentuale, per classi di veicolo, del numero di passaggi sulle due direzioni di marcia: --> Salerno & <-- Avellino. I mesi di Gennaio, Febbraio e Dicembre non sono rappresentativi a causa dell'incompletezza dei dati"}
 
 ## organize data by months
 
-## get the months of observations
-DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
-
-# get all names for speficic classes
-all_passaggi <- names(DB[grep(pattern  = paste(c("passaggi", "month"), collapse = "|"), x = names(DB))])
-all_passaggi_idx <- which(names(DB) %in%  names(DB[grep(pattern  = paste(c("passaggi", "month"), collapse = "|"), x = names(DB))]) )
-# select only "passaggi"
-DB_passaggi <- DB[all_passaggi]
-
-# add corsia and direzione
-DB_passaggi <- cbind(DB_passaggi, DB$corsia, DB$direzione)
-names(DB_passaggi) <- c(all_passaggi, "corsia", "direzione")
-
-# transpose data
-passaggi <- gather(DB_passaggi, "classi", "records", 1:(length(all_passaggi)-1))
-passaggi$records <- as.numeric(passaggi$records)
-
-passaggi$classi <- as.factor(passaggi$classi)
-# make classe "articolati" as classe "Autotreni"
-passaggi$classi <- gsub("passaggi_totali_articolati","passaggi_totali_autotreni", (passaggi$classi))
-
-
-# somma di tutti i tipi di conteggi per i passaggi di veicoli
-STATS_passaggi_monthly <- passaggi %>%
-  group_by( #corsia,
-           direzione,
-           classi,
-           month) %>%
-  summarise(conteggi_totali = sum(records, na.rm = TRUE))
-
-
-STATS_passaggi_monthly$classi <- as.factor(STATS_passaggi_monthly$classi)
-# change "passaggi with "N
-STATS_passaggi_monthly$classi <- gsub("passaggi_totali","N", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$classi <- gsub("classe_di_velocita_","", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$classi <- gsub("__","_", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$direzione <- gsub("A","--> Salerno", (STATS_passaggi_monthly$direzione))
-STATS_passaggi_monthly$direzione <- gsub("D","<-- Avellino", (STATS_passaggi_monthly$direzione))
-
-to_keep <- as.vector( STATS_passaggi_monthly$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi_monthly$classi)])
-
-# remove not neccessary informations for the counts (conteggi totali)
-# only keep the "conteggi" by classe 
-STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
-  filter(classi %in% to_keep) 
+# ## get the months of observations
+# DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+# 
+# # get all names for speficic classes
+# all_passaggi <- names(DB[grep(pattern  = paste(c("passaggi", "month"), collapse = "|"), x = names(DB))])
+# all_passaggi_idx <- which(names(DB) %in%  names(DB[grep(pattern  = paste(c("passaggi", "month"), collapse = "|"), x = names(DB))]) )
+# # select only "passaggi"
+# DB_passaggi <- DB[all_passaggi]
+# 
+# # add corsia and direzione
+# DB_passaggi <- cbind(DB_passaggi, DB$corsia, DB$direzione)
+# names(DB_passaggi) <- c(all_passaggi, "corsia", "direzione")
+# 
+# # transpose data
+# passaggi <- gather(DB_passaggi, "classi", "records", 1:(length(all_passaggi)-1))
+# passaggi$records <- as.numeric(passaggi$records)
+# 
+# passaggi$classi <- as.factor(passaggi$classi)
+# # make classe "articolati" as classe "Autotreni"
+# passaggi$classi <- gsub("passaggi_totali_articolati","passaggi_totali_autotreni", (passaggi$classi))
+# 
+# 
+# # somma di tutti i tipi di conteggi per i passaggi di veicoli
+# STATS_passaggi_monthly <- passaggi %>%
+#   group_by( #corsia,
+#            direzione,
+#            classi,
+#            month) %>%
+#   summarise(conteggi_totali = sum(records, na.rm = TRUE))
+# 
+# 
+# STATS_passaggi_monthly$classi <- as.factor(STATS_passaggi_monthly$classi)
+# # change "passaggi with "N
+# STATS_passaggi_monthly$classi <- gsub("passaggi_totali","N", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$classi <- gsub("classe_di_velocita_","", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$classi <- gsub("__","_", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$direzione <- gsub("A","--> Salerno", (STATS_passaggi_monthly$direzione))
+# STATS_passaggi_monthly$direzione <- gsub("D","<-- Avellino", (STATS_passaggi_monthly$direzione))
+# 
+# to_keep <- as.vector( STATS_passaggi_monthly$classi[-grep(pattern  = "\\_km_h\\b", x = STATS_passaggi_monthly$classi)])
+# 
+# # remove not neccessary informations for the counts (conteggi totali)
+# # only keep the "conteggi" by classe 
 # STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
-#   filter(!classi %in% c("N_conteggio", "N_altri", "N_camion_7_5m", "N_camion_7_5m_1", "N_auto_rimorchio",
-#                         "N_autobus", "N_moto"))  
-STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
-  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio"))  
-
-STATS_passaggi_monthly <- as.data.frame(STATS_passaggi_monthly)
-
-## get number all all vehicles by pecentage
-# normalize all "passaggi" to the "classe" N
-STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
-  group_by(direzione,
-           month) %>%
-  mutate(norm_conteggi = (conteggi_totali/conteggi_totali[1])*100)
-STATS_passaggi_monthly$norm_conteggi <- round(STATS_passaggi_monthly$norm_conteggi, digits = 1)
-
- 
-STATS_passaggi_monthly <- STATS_passaggi_monthly[order(-STATS_passaggi_monthly$conteggi_totali),]
-STATS_passaggi_monthly <- STATS_passaggi_monthly[order(-STATS_passaggi_monthly$norm_conteggi),]
-# remove rows with 0 values
-STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$conteggi_totali == 0), ]
-STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$norm_conteggi == 0), ]
-STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$norm_conteggi == 100), ]
-STATS_passaggi_monthly$classi <- gsub("N_","", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$classi <- gsub("autotreni","autotreni & artic.", (STATS_passaggi_monthly$classi))
-STATS_passaggi_monthly$classi <- gsub("auto_rimorchio","auto rimorchio", (STATS_passaggi_monthly$classi))
-
-STATS_passaggi_monthly <- as.data.frame(STATS_passaggi_monthly)
-STATS_passaggi_monthly$classi <- as.character(STATS_passaggi_monthly$classi)
-
-categories <- as.character( unique(STATS_passaggi_monthly$classi))
-
-### plot passaggi by % pecentage and by MONTH #####
-###################################################
-
-
-plot <- ggplot(STATS_passaggi_monthly, aes(month, conteggi_totali, fill = direzione)) +
-  theme_bw() +
-  facet_grid(classi ~ .) +
-  # ylim(0, 250) +
-  theme( strip.text = element_text(size = 8)) +
-  geom_bar(stat = "identity", position = position_stack()) +
-  # scale_x_discrete(limits = categories) + 
-  geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
-            position = position_stack(0.5), size=3)+
-  theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
-  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=12)) +
-  theme(axis.text.x=element_text(size=10,face="bold", colour = "black")) +
-  theme(axis.title.x = element_blank()) +                                     
-  ylab(expression(paste("numero di passaggi"))) + 
-  theme(axis.title.y = element_text(face="bold", colour="black", size=9),
-        axis.text.y  = element_text(angle=0, vjust=0.5, size=9, colour="black")) +
-  ggtitle("numero totale di passaggi per mese (2017-2018)") + 
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5)) 
-plot
+#   filter(classi %in% to_keep) 
+# # STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
+# #   filter(!classi %in% c("N_conteggio", "N_altri", "N_camion_7_5m", "N_camion_7_5m_1", "N_auto_rimorchio",
+# #                         "N_autobus", "N_moto"))  
+# STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
+#   filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio"))  
+# 
+# STATS_passaggi_monthly <- as.data.frame(STATS_passaggi_monthly)
+# 
+# ## get number all all vehicles by pecentage
+# # normalize all "passaggi" to the "classe" N
+# STATS_passaggi_monthly <- STATS_passaggi_monthly %>%
+#   group_by(direzione,
+#            month) %>%
+#   mutate(norm_conteggi = (conteggi_totali/conteggi_totali[1])*100)
+# STATS_passaggi_monthly$norm_conteggi <- round(STATS_passaggi_monthly$norm_conteggi, digits = 1)
+# 
+#  
+# STATS_passaggi_monthly <- STATS_passaggi_monthly[order(-STATS_passaggi_monthly$conteggi_totali),]
+# STATS_passaggi_monthly <- STATS_passaggi_monthly[order(-STATS_passaggi_monthly$norm_conteggi),]
+# # remove rows with 0 values
+# STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$conteggi_totali == 0), ]
+# STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$norm_conteggi == 0), ]
+# STATS_passaggi_monthly <- STATS_passaggi_monthly[!(STATS_passaggi_monthly$norm_conteggi == 100), ]
+# STATS_passaggi_monthly$classi <- gsub("N_","", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$classi <- gsub("autotreni","autotreni & artic.", (STATS_passaggi_monthly$classi))
+# STATS_passaggi_monthly$classi <- gsub("auto_rimorchio","auto rimorchio", (STATS_passaggi_monthly$classi))
+# 
+# STATS_passaggi_monthly <- as.data.frame(STATS_passaggi_monthly)
+# STATS_passaggi_monthly$classi <- as.character(STATS_passaggi_monthly$classi)
+# 
+# categories <- as.character( unique(STATS_passaggi_monthly$classi))
+# 
+# ### plot passaggi by % pecentage and by MONTH #####
+# ###################################################
+# 
+# 
+# plot <- ggplot(STATS_passaggi_monthly, aes(month, conteggi_totali, fill = direzione)) +
+#   theme_bw() +
+#   facet_grid(classi ~ .) +
+#   # ylim(0, 250) +
+#   theme( strip.text = element_text(size = 8)) +
+#   geom_bar(stat = "identity", position = position_stack()) +
+#   # scale_x_discrete(limits = categories) + 
+#   geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
+#             position = position_stack(0.5), size=3)+
+#   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
+#   theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=12)) +
+#   theme(axis.text.x=element_text(size=10,face="bold", colour = "black")) +
+#   theme(axis.title.x = element_blank()) +                                     
+#   ylab(expression(paste("numero di passaggi"))) + 
+#   theme(axis.title.y = element_text(face="bold", colour="black", size=9),
+#         axis.text.y  = element_text(angle=0, vjust=0.5, size=9, colour="black")) +
+#   ggtitle("numero totale di passaggi per mese (1-18 Settembre 2017)") + 
+#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5)) 
+# plot
 
 
 ```
@@ -1133,7 +1041,7 @@ STATS_passaggi <- passaggi %>%
   group_by(corsia,
            direzione,
            classi) %>%
-  summarise(conteggi_totali = sum(records, na.rm = TRUE))
+  summarise(conteggi_totali = mean(records, na.rm = TRUE))
 
 STATS_passaggi$classi <- as.factor(STATS_passaggi$classi)
 # change "passaggi with "N
@@ -1149,7 +1057,7 @@ to_keep <- as.vector( STATS_passaggi$classi[-grep(pattern  = "\\_km_h\\b", x = S
 # remove not neccessary informations for the counts (conteggi totali)
 # only keep the "conteggi" by classe 
 STATS_passaggi <- STATS_passaggi %>%
-  filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio")) %>%
+ filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_autobus", "N_moto")) %>%
   filter(classi %in% to_keep)
 
 ## get number all all vehicles by pecentage
@@ -1206,11 +1114,11 @@ q <- ggplot(data = STATS_passaggi,
   theme(axis.text.x=element_text(size=10,face="bold", colour = "black")) +
   theme(axis.title.x = element_blank()) +                                     
   ylab("Passaggi") +   
-  ylim(0, 3600000) +
+  ylim(0, 500) +
    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=10, colour="black")) +
   geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, vjust = -0.5) +
-  ggtitle("Numero totale di passaggi per corsia di marcia e per classi di autoveicoli (2017-2018)") + 
+  ggtitle("Numero totale di passaggi per corsia di marcia e per classi di autoveicoli (1-18 Settembre 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 14))
 q
 
@@ -1263,6 +1171,15 @@ DB <- rbind(DB1, DB2)
 ## A2 Direzione Salerno (Ascendente)
 
 names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
+
+#########################################################################
+## filter data within the same time range of Viasat data #####
+
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-19")
+DB <- DB %>%
+  filter(date < max & date > min)
+
 
 Corsia_1A <- DB %>%
   select(date,
@@ -1546,6 +1463,14 @@ DB <- rbind(DB1, DB2)
 
 names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
 
+#########################################################################
+## filter data within the same time range of Viasat data #####
+
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-18")
+DB <- DB %>%
+  filter(date < max & date > min)
+
 Corsia_1A <- DB %>%
   select(date,
          corsia,
@@ -1663,6 +1588,14 @@ DB <- rbind(DB1, DB2)
 ## A2 Direzione Avellino (Discendente)
 
 names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
+
+#########################################################################
+## filter data within the same time range of Viasat data #####
+
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-18")
+DB <- DB %>%
+  filter(date < max & date > min)
 
 # Corsia_1A <- DB %>%
 #   select(date,
@@ -1850,7 +1783,7 @@ q <- ggplot(data = STATS_velocita,
    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=10, colour="black")) +
   geom_text(aes(label = paste(velocita_medie, sep = "")), size = 3, hjust = 0.5, vjust = -0.5) +
-  ggtitle("Velocita' per classi (2017-2018)") + 
+  ggtitle("Velocita' per classi (1-18 Settembre 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
 q
 
@@ -1858,6 +1791,179 @@ q
 
 
 *<br/><br/>*
+
+
+
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=7, fig.cap ="**Figura 11a.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno)."}
+
+
+########################
+### summary stats ######
+########################
+
+#######################
+### Velocita' #########
+
+
+## get the months of observations
+DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+
+## filter data as the same time-range of VIASAT data
+min <- as.Date("2017-08-31")
+max <- as.Date("2017-09-18")
+
+DB <- DB %>%
+  filter(date < max & date > min)
+
+# get all names for speficic classes of velocita'
+all_velocita <- names(DB[grep(pattern  = "velocita", x = names(DB))])
+DB_velocita <- DB[all_velocita]
+# exclude all names the word containing "passaggi"
+all_velocita <- names(DB_velocita[-grep(pattern  = "passaggi", x = names(DB_velocita))])
+DB_velocita <- DB[all_velocita]
+# add corsia and direzione
+DB_velocita <- cbind(DB_velocita, DB$corsia, DB$direzione)
+names(DB_velocita) <- c(all_velocita, "corsia", "direzione")
+# transpose data
+velocita <- gather(DB_velocita, "classi", "records", 1:length(all_velocita))
+velocita$records <- as.numeric(velocita$records)
+velocita$records <-  round(velocita$records, digits = 0)
+# make "articolati" as the same class of "autotreni"
+velocita$classi <- as.factor(velocita$classi)
+velocita$classi <- gsub("__articolati","__autotreni", (velocita$classi))
+
+#media di tutte le velocita' per ogni classe di veicolo di veicoli
+velocita <- velocita[complete.cases(velocita), ] # Keep only the complete rows
+# remove velocita' == 0
+velocita <- velocita[!(velocita$records == 0), ]
+
+
+
+# STATS_velocita <- velocita %>%
+#   group_by(corsia,
+#            direzione,
+#            classi) %>%
+#   summarise(velocita_medie = mean(records, na.rm = TRUE)) 
+
+velocita$classi <- as.factor(velocita$classi)
+# change the structure of some strings
+velocita$classi <- gsub("velocita__","", (velocita$classi))
+velocita$direzione <- gsub("A","--> Salerno", (velocita$direzione))
+velocita$direzione <- gsub("D","<-- Avellino", (velocita$direzione))
+velocita$classi <- gsub("__km_h__","_", (velocita$classi))
+velocita$classi <- gsub("__km_h_","", (velocita$classi))
+
+velocita$corsia <- as.factor(velocita$corsia)
+names(velocita)[names(velocita) == 'records'] <- 'speed'
+
+# STATS_velocita_1 <- STATS_velocita %>%
+#   filter(direzione == "--> Salerno" & corsia %in% c("1","2"))
+# STATS_velocita_2 <- STATS_velocita %>%
+#   filter(direzione == "<-- Avellino" & corsia %in% c("3","4"))
+# STATS_velocita <- rbind(STATS_velocita_1, STATS_velocita_2)
+
+
+# STATS_velocita$corsia <- gsub("1","corsia 1 (--> Salerno)", (STATS_velocita$corsia))
+# STATS_velocita$corsia <- gsub("2","corsia 2 (--> Salerno)", (STATS_velocita$corsia))
+# STATS_velocita$corsia <- gsub("3","corsia 3 (<-- Avellino)", (STATS_velocita$corsia))
+# STATS_velocita$corsia <- gsub("4","corsia 4 (<-- Avellino)", (STATS_velocita$corsia))
+
+pattern_to_remove_auto = paste(c("\\_conteggio\\b", "\\_altri\\b","\\_autobus\\b", "\\_moto\\b", "deviazione_standard", "media_armonica", "\\media\\b", "\\media_auto\\b" ), collapse = "|")
+
+to_keep_pesanti <- as.vector( velocita$classi[-grep(pattern = pattern_to_remove_auto , x = velocita$classi)])
+
+to_keep_auto <- as.vector( velocita$classi[grep(pattern = "\\media_auto\\b" , x = velocita$classi)])
+
+# remove not neccessary informations for the counts (conteggi totali)
+velocita_pesanti <- velocita %>%
+  filter(classi %in% to_keep_pesanti)
+
+velocita_pesanti$classi <- "pesanti"
+
+velocita_auto <- velocita %>%
+  filter(classi %in% to_keep_auto) 
+velocita_auto$classi <- "auto"
+
+velocita <- rbind(velocita_pesanti, velocita_auto)
+velocita_salerno <- velocita %>%
+  filter(direzione == "--> Salerno") %>%
+  select(direzione,classi, speed)
+
+velocita_avellino <- velocita %>%
+  filter(direzione == "<-- Avellino") %>%
+  select(direzione,classi, speed)
+
+plots <- lapply(split(velocita_salerno, velocita_salerno$classi),FUN=function(speed_dist){ 
+    # ggplot(aes((speed), fill = as.factor(vehtype))) +
+    ggplot(speed_dist, aes(speed)) +
+    # ggplot(aes( (mean_speed))) + 
+    geom_density(alpha = 0.5) +
+    ylim(0, 0.035) +
+    # geom_histogram(binwidth=.05) +   ### counts
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(speed_dist$speed),
+                           sd = sd(speed_dist$speed)), colour = "red") +  ## fit withGaussian
+    theme_bw() +
+     # geom_line(aes(y = pois), col = "blue") + 
+    # geom_line(aes(y = nbinom), col = "green") + 
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+    ylab("densità (u.a)") +
+    xlab("velocità (km/h)") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+    geom_vline(xintercept=mean(speed_dist$speed), color="red", linetype="dashed", size=0.5) 
+})
+
+
+# Finally, present the plots on 3 columns.
+grid.arrange(plots$auto, plots$pesanti, nrow=1, ncol = 2,
+             top = textGrob("auto                                                  mezzi pesanti",gp=gpar(fontsize=20,font=3)))
+
+```
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=7, fig.cap ="**Figura 11b.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Avellino)."}
+
+
+velocita_avellino <- velocita %>%
+  filter(direzione == "<-- Avellino") %>%
+  select(direzione,classi, speed)
+
+plots <- lapply(split(velocita_avellino, velocita_avellino$classi),FUN=function(speed_dist){ 
+    # ggplot(aes((speed), fill = as.factor(vehtype))) +
+    ggplot(speed_dist, aes(speed)) +
+    # ggplot(aes( (mean_speed))) + 
+    geom_density(alpha = 0.5) +
+    ylim(0, 0.035) +
+    # geom_histogram(binwidth=.05) +   ### counts
+    stat_function(fun = dnorm, 
+                  args = list(mean = mean(speed_dist$speed),
+                           sd = sd(speed_dist$speed)), colour = "red") +  ## fit withGaussian
+    theme_bw() +
+     # geom_line(aes(y = pois), col = "blue") + 
+    # geom_line(aes(y = nbinom), col = "green") + 
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+    ylab("densità (u.a)") +
+    xlab("velocità (km/h)") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+    geom_vline(xintercept=mean(speed_dist$speed), color="red", linetype="dashed", size=0.5) 
+})
+
+
+# Finally, present the plots on 3 columns.
+grid.arrange(plots$auto, plots$pesanti, nrow=1, ncol = 2,
+             top = textGrob("auto                                                  mezzi pesanti",gp=gpar(fontsize=20,font=3)))
+
+
+````
+
 
 ## 4. Analisi del tempo di occupazione per classe di veicoli
 
@@ -1915,6 +2021,14 @@ DB <- rbind(DB1, DB2)
 ## A2 Direzione Salerno (Ascendente)
 
 names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
+
+#########################################################################
+## filter data within the same time range of Viasat data #####
+
+min <- as.Date("2017-08-31") 
+max <- as.Date("2017-09-18")
+DB <- DB %>%
+  filter(date < max & date > min)
 
 # put to 0 one particular date 
 idx_to_remove <- which(DB$date == as_datetime("2018-08-14 17:00:00 UTC"))
@@ -2086,7 +2200,7 @@ q <- ggplot(data = STATS_occupazione,
    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=10, colour="black")) +
   geom_text(aes(label = paste(round(occupazione_media), sep = "")), size = 3, hjust = 0.5, vjust = -0.5) +
-  ggtitle("Massimo tempo di occupazione (in secondi) per classi di autoveicoli (2017-2018)") + 
+  ggtitle("Massimo tempo di occupazione (in secondi) per classi di autoveicoli (1-18 Settembre 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
 q
 
@@ -2371,7 +2485,7 @@ p <- ggplot(data = STATS_occupazione_hourly_SALERNO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=0, vjust=0.5, size=8, hjust = 0.5)) +  
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Tempo medio di occupazione per ora della giornata (--> Salerno) (2017-2018)") + 
+    ggtitle("Tempo medio di occupazione per ora della giornata (--> Salerno) (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
   
@@ -2380,12 +2494,7 @@ p <- ggplot(data = STATS_occupazione_hourly_SALERNO,
 *<br/><br/>*
 
 
-
-
-*<br/><br/>*
-
-
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=6,  fig.cap ="**Figura 14a.** Tempo medio di occupazione per classe di autoveicoli e per corsia di marcia sul tratto dell'autostrada A2 (km5+004) nella direzione verso Avellino"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=6,  fig.cap ="**Figura 14a.** Tempo medio di occupazione per classe di autoveicoli e per corsia di marcia sul tratto dell'autostrada A2 (km5+004) nella direzione verso Avellino."}
 
 
 ### plot OCCUPAZIONE #####
@@ -2414,21 +2523,16 @@ p <- ggplot(data = STATS_occupazione_hourly_AVELLINO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=0, vjust=0.5, size=8,  hjust = 0.5)) + 
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Tempo medio di occupazione per ora della giornata (<-- Avellino) (2017-2018)") + 
+    ggtitle("Tempo medio di occupazione per ora della giornata (<-- Avellino) (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
   
 
 ```
 
+
 *<br/><br/>*
 
-
-
-
-  
-  
-*<br/><br/>*
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=7, fig.cap ="**Figura BBB.** Media delle velocita' medie ed armoniche per classe di autoveicoli e per corsia di marcia sul tratto dell'autostrada A2 (km5+004)."}
 
@@ -2442,11 +2546,11 @@ p <- ggplot(data = STATS_occupazione_hourly_AVELLINO,
 DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
 
 ## filter data as the same time-range of VIASAT data
-min <- as.Date("2017-08-31") 
+min <- as.Date("2017-08-31")
 max <- as.Date("2017-09-18")
 
 velocita_ANAS <- DB %>%
-  filter(date < max & date > min) %>% 
+  filter(date < max & date > min) %>%
   select(date, velocita__media__km_h_)
 names(velocita_ANAS) <- c("date", "velocità")
 
@@ -2461,7 +2565,7 @@ p <- velocita_ANAS %>%
     # scale_x_continuous(trans='log10') +
     guides(fill=guide_legend(title="tipo veicolo")) +
     theme_bw() +
-    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),
           axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
     ylab("densità (u.a)") +
     # ylab("conteggi") +
@@ -2487,29 +2591,29 @@ p
 
 
 
-# estimate paramters
-library(MASS)
-library(fitdistrplus)
-## fit with a "gaussian/normal" distribution
-fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$velocità, "norm")
-class(fit_ANAS) <- c("fitdist", "fitdistr") 
-fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
-names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
-
-
-
-fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS)) 
-fit_ANAS <- fit_ANAS %>%
-  filter(`tipo veicolo` == "veicoli ANAS")
-fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
-
-
-Caption <- paste0("**Tabella 3.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee** con una distribuzione gaussiana. I parametri di valore medio e di deviazione standard sono riportati per automobli e veicoli pesanti.")
-set.caption(Caption)
-panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
-panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
-panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
-pander(fit_ANAS, emphasize.strong.cols = 1, missing = "")
+# # estimate paramters
+# library(MASS)
+# library(fitdistrplus)
+# ## fit with a "gaussian/normal" distribution
+# fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$velocità, "norm")
+# class(fit_ANAS) <- c("fitdist", "fitdistr")
+# fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
+# names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
+# 
+# 
+# 
+# fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS))
+# fit_ANAS <- fit_ANAS %>%
+#   filter(`tipo veicolo` == "veicoli ANAS")
+# fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
+# 
+# 
+# Caption <- paste0("**Tabella 3.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee** con una distribuzione gaussiana. I parametri di valore medio e di deviazione standard sono riportati per automobli e veicoli pesanti.")
+# set.caption(Caption)
+# panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+# panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+# panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+# pander(fit_ANAS, emphasize.strong.cols = 1, missing = "")
 
 ````
 
