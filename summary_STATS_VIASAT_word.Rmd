@@ -173,7 +173,7 @@ q <- ggplot(data = total_counts_type_direzione,
             position = position_stack(0.8), size=5)+
   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
   theme(axis.title.x = element_blank()) +
-  ylab(expression(paste("numero di passaggi (a.u)"))) +
+  ylab(expression(paste("numero di passaggi"))) +
   xlab(expression(paste(""))) +
   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
@@ -371,7 +371,7 @@ plots <- lapply(split(data_salerno, data_salerno$vehtype),FUN=function(speed_dis
     # geom_line(aes(y = nbinom), col = "green") + 
     theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
           axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
-    ylab("densità (u.a)") +
+    ylab("densità") +
     xlab("velocità (km/h)") +
     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
@@ -587,7 +587,141 @@ pander(all_fits, emphasize.strong.cols = 1, missing = "")
 Il confronto sulla distribuzione di velocità tra i dati di traffico Viasat e ANAS è stato fatto su tutti i veicoli senza distinzione tra automobili e veicoli pesanti. Come mostrato in **Figura 6** e **Tabella 3a** la modelizzazione delle velocità con una curva gaussiana ha mostrato che i dati ANAS hanno una deviazione standard **`r all_fits$velocità[2]` km/h**  inferiore di quella modellizzata per i dati Viasat **`r all_fits$velocità[4]`km/h**. Inoltre la velocità media modelizzata con i dati ANAS è risultata essere di **`r all_fits$velocità[1]`  km/h** mentre quella modelizzata con i dati Viasat è stata stimata essere **`r all_fits$velocità[3]`km/h**.
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6.** Velocità media istantanea per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella XXX. t-test per il confronto tra le distribuzioni di velocità ANAS e VIASAT (1-18 Settembre 2017; Salerno-Avellino).**"}
+
+
+# https://statistics.berkeley.edu/computing/r-t-tests
+
+### t-test
+# test a due code
+t_test <- t.test(velocita_ANAS$speed, data$speed,
+       alternative = 'two.sided',     
+       conf.level = .95)
+
+tvalue <- t_test$statistic
+pvalue <- t_test$p.value
+
+
+````
+
+
+*<br/><br/>*
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Box-plots che mostrano il confronto tra le distribuzioni di velocità ANAS e VIASAT (1-18 Settembre 2017; Salerno-Avellino)."}
+
+## Wilcoxon-Manney test
+
+
+df_ANAS <- data.frame(velocita_ANAS$speed)
+names(df_ANAS) <- "velocità"
+df_ANAS$source <- "ANAS"
+
+df_VIASAT <- data.frame(data$speed)
+names(df_VIASAT) <- "velocità"
+df_VIASAT$source <- "VIASAT"
+
+
+df <- rbind(df_ANAS, df_VIASAT)
+
+
+library(ggplot2)
+
+p <- ggplot(df) + 
+    aes(x = source, y = velocità) +
+    geom_boxplot(fill = "orange") + 
+    theme_bw() +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=14)) +
+    ylab("velocità") +
+    xlab("") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+    ggtitle("Confronto dei dati ANAS & VIASAT (1-18 Settembre 2017)") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+p
+
+
+
+df$source <- factor(df$source,
+  levels = c("ANAS", "VIASAT")
+)
+
+
+w_test <- wilcox.test(velocita_ANAS$speed, data$speed, paired = FALSE)
+# wilcox.test(velocità~source)
+# with(df, wilcox.test(velocità~source))
+p_value <- w_test$p.value
+w_value <- w_test$statistic
+
+
+````
+
+
+
+## Confronto tra dati ANAS e VIASAT
+### a) t-test
+
+I box-plots riportati in **Figura 7** mostrano che i dati VIASAT hanno una variabilita' piu' grande rispetto ai dati ANAS. Inoltre, I dati VIASAT presentatno molti valori estremi ed anche un maggior numero di *outliers* riseptto ai dati ANAS. Malgrado queste differenze, gli interquartili delle due distribuzioni sono molto simili.
+Il t-test confronta la differenza osservata fra le medie delle due distribuzioni (ANAS e VIASAT). Se la differenza è maggiore di 0, allora si puo' parlare di indipendenza statistica tra le due distribuzioni.
+ Poichè la differenza fra le medie è **`r tvalue` km/h**, l’ipotesi nulla è quindi da scartare e la differenza tra le distribuzioni è compresa fra −7.0 e 8.4 km/h (l’ipotesi nulla è che la differenza sia uguale 0). Inoltre il valore di p è **`r pvalue`** e quindi i dati osservati sono statisticamente significativi.
+
+*<br/><br/>*
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8** Kolmogorov-Smirnov test per il confronto tra le distribuzioni di velocità ANAS e VIASAT (1-18 Settembre 2017; Salerno-Avellino)."}
+
+
+#####################################################
+### comparing two distributions (ANAS and Viasat) ###
+#####################################################
+
+
+p <- ggplot(df, aes(velocità, colour = source)) + 
+     stat_ecdf(size = 2) +
+    # guides(fill=guide_legend(title="")) +
+    theme_bw() +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
+          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+    ylab("Quantile") +
+    xlab("velocità (km/h)") +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+   geom_vline(xintercept=mean(  velocita_ANAS$speed), color="red", linetype="dashed",
+              size=0.5) +
+   geom_vline(xintercept=mean(  data$speed), color="blue", linetype="dashed",
+              size=0.5) +
+    ggtitle("Cumulative Distribution Function (ANAS & VIASAT; 1-18 Settembre 2017)") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+p
+
+## Kolmogorov-Smirnov test
+## https://stats.stackexchange.com/questions/222294/understanding-kolmogorov-smirnov-test-in-r
+KS_test <- ks.test(velocita_ANAS$speed, data$speed)
+KS_value <- KS_test$statistic
+perc_KS_value <- round(KS_value*100, digits = 0)
+p_value <- KS_test$p.value
+
+
+````
+
+
+*<br/><br/>*
+
+
+### b) Kolmogorov–Smirnov test
+
+Il test di Kolmogorov–Smirnov (K-S test) è un test non parametrico per il confronto di due distribuzioni indipendenti. Questo test quantifica la distanza massima tra le due distribuzioni cumulative dei campioni di dati in esame (Viasat e ANAS). Per stimare questa distanza, abbiamo calcolato la *cumulative distribution function (CDF)* che è la derivata della distribuzione riporta in Figura 6. Questa funzione mostra chiarmente che 50% delle velocita' ANAS e VIASAT sono inferiori a 92 km/h e 85 km/h, rispettivamente.
+Il K-S test eseguito sulle due distribuzioni di dati ANAS e VIASAT è risultato in una differenza di **`r KS_value`** che significa che le due distribuzioni differiscono di circa il **`r perc_KS_value` %**.
+
+
+### c) Mann-Whitney test
+
+Il test di Wilcoxon e il test di Mann-Whitney (anche noto come test U di Mann-Whitney) sono due dei più potenti test non parametrici per verificare se dati di due distribuzioni provengono dalla stessa popolazione di dati. Con questo test abbiamo verificato che le due distribuzioni contengono gli stessi veicoli monitoriati sia con il sistema Viasat sia con il sistema di ANAS. Infatti, similmente al t-test, il p-value è inferiore al livello di significatività dello 0.05. Questo significa che le due popolazioni di dati (Viasat e ANAS) non sono identiche ma sono molto simili.
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura ooo.** Velocità media istantanea per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
 
 ###############################
 ### summary stats by day ######
@@ -707,12 +841,16 @@ Il confronto sulla distribuzione di velocità tra i dati di traffico Viasat e AN
 
 *<br/><br/>*
 
+## Stati del traffico (Livelli di Servizio LOS)
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura AAA.** Flusso per ora della giornata su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essedo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il fattore di rappresentatività riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale in esame, e' stata stimata per ogni ora del giorno. Il rapporto tra il flusso orario e la velocità è risultato nella stima della densità che è rappresentata in **Figura 10**.  
 
-##############################
-#### TRAFFIC STATES ##########
-##############################
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** Flusso per ora della giornata su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+
+###########################################################
+#### TRAFFIC STATES #############################
+#########################################
 
 
 
@@ -724,16 +862,21 @@ Il confronto sulla distribuzione di velocità tra i dati di traffico Viasat e AN
 ## get all passaggi (conteggi) by hour
 ## resample data  y 15 minutes
 VIASAT_STATS_passaggi_hourly <- data %>%
-  # filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
-  group_by(Date=floor_date(timedate, "15 minute"), direzione, day, hour) %>%
+  filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
+  group_by(Date=floor_date(timedate, "15 minute"), direzione, day, hour, u, v) %>%
   summarize(instant_speed=mean(speed),
               count = length(idterm))
 
 
 VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
-  group_by(direzione,
+  group_by(direzione, u,v,
            hour) %>%
   summarise(flux = mean((count)/0.25, na.rm = TRUE))
+
+
+#### rescale to ANAS data
+VIASAT_STATS_passaggi_hourly$flux <- ((VIASAT_STATS_passaggi_hourly$flux)*100)/(total_counts_direzione$`%(VIASAT/ANAS)`[1])
+
 
 
 
@@ -768,9 +911,9 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("FLusso orario (1-18 Settembre 2017)") + 
+    ggtitle("FLusso orario conforme ad ANAS (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
-  p
+  # p
 
   
 ````
@@ -780,7 +923,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 *<br/><br/>*
 
  
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura BBB** Desnsità per ora su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 10.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
  
 ########## density ##################################
 
@@ -792,7 +935,7 @@ lunghezza <- lunghezza %>%
 
 
 passaggi_density <- data %>%
-   # filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
+   filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
    group_by(Date=floor_date(timedate, "15 minute"), 
              u,v, hour, direzione,
              day, length) %>%
@@ -806,17 +949,49 @@ density_by_day <- passaggi_density %>%
             mean_speed = mean(mean_speed))
 density_by_day <- density_by_day %>%
   left_join(lunghezza, by = c("u", "v")) 
-density_by_day <- density_by_day %>%
-  group_by(direzione, hour) %>%
-  summarize(length= sum(length),
-            count = sum(count))
-
-density_by_day$density <- ((density_by_day$count)/((density_by_day$length)/1000)  )
 
 density_by_day$hour <- as.numeric(density_by_day$hour)
 
+density_by_day <- density_by_day %>%
+  left_join(VIASAT_STATS_passaggi_hourly, by = c("direzione", "u", "v", "hour"))
+
+
+
+#### rescale to ANAS data
+density_by_day$count <- ((density_by_day$count)*100)/(total_counts_direzione$`%(VIASAT/ANAS)`[1])
+
+
+density_by_day <- density_by_day %>%
+  group_by(direzione, hour) %>%
+  summarize(length= sum(length),
+            count = sum(count),
+            flux = mean(flux),
+            perc_time_spent_foll = mean(perc_time_spent_foll),
+            mean_speed = mean(mean_speed))
+
+
+### DENSITA' veicolare: DENSITÀ DI TRAFFICO [D = veic/km]: rapporto tra il VOLUME di traffico ##[V] misurato in un determinato tronco stradale in un breve intervallo di tempo (15 min.) e
+### la media delle VELOCITÀ [S] dei veicoli:
+
+density_by_day$density <- (density_by_day$flux)/(density_by_day$mean_speed)
+
+## add field for max speed
+density_by_day$max_speed <- as.numeric(130)
+
+
+###################################
+## percent time-spent-following ###
+
+# https://www.frontiersin.org/articles/10.3389/fbuil.2020.00001/full
+
+# density_by_day$perc_time_spent_foll <-   43.930 + 9.601*(density_by_day$density) − 0.8432*(density_by_day$density)^2 + 0.02764*(density_by_day$density)^3
+
+density_by_day$perc_time_spent_foll <- round(100*(1-exp(-0.000879*density_by_day$flux)),
+                              digits = 0)
+
+
 p <- ggplot(data = density_by_day,
-              aes(hour, density, fill = hour)) + guides(fill=FALSE) +
+              aes(hour, density, fill = density)) + guides(fill=FALSE) +
     geom_bar(stat = "identity") + 
     facet_wrap( ~ direzione, ncol = 4) +
     # facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
@@ -837,33 +1012,183 @@ p <- ggplot(data = density_by_day,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Densità spaziale (1-18 Settembre 2017)") + 
+    ggtitle("Densità spaziale nella sezione stradale (1-18 Settembre 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
 ````
 
+*<br/><br/>*
+Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per quanto concerne le autostrade,gli stati del traffico per ogni ora della giornata e direzioni di marcia sono stati stimati attraverso la densita' veicolare.
+
+LIVELLI DI SERVIZIO: è definito come
+misura della prestazione della strada
+nello smaltire traffico.
+I livelli di servizio (LOS – Level Of
+Service) sono 6 da LOS “A” a LOS “F”.
+I LOS da “A” a “D” hanno una densità
+inferiore a quello corrispondente alla
+capacità.
+Il LOS E corrisponde alla densità critica
+e quindi alla capacità della strada.
+Il LOS “F” ha densità maggiori e quindi
+siamo in presenza di flusso instabile.
+
+LOS “A”: circolazione libera, massimo comfort, flusso stabile (Densità
+≤ 7 veic/km/cosia);
+LOS “B” circolazione libera, modesta riduzione della velocità, comfort accettabile, flusso
+stabile (7 < Densità
+≤ 11 veic/km/corsia);
+LOS “C”: primi vincoli alla circolazione, riduzione velocità, si riduce il comfort, flusso
+stabile (11 < Densità
+≤ 16 veic/km/corsia);
+LOS “D”: vincoli alla circolazione, basso comfort, flusso che può iniziare ad essere
+instabile (16 < Densità
+≤ 22 veic/km/corsia);
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 11.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, mentre la lettera **C** indica un stato **STABILE**."}
+
+
+# i = 31
+# 
+# time_at_mean_speed = as.vector(density_by_day$perc_time_spent_foll)
+# max_speed = density_by_day$max_speed
+# mean_speed = density_by_day$mean_speed
+# density = density_by_day$density
+# flux = density_by_day$flux
+# 
+# 
+# time_at_mean_speed <- time_at_mean_speed[i]
+# max_speed<- max_speed[i]
+# mean_speed <- mean_speed[i]
+# density <- density[i]
+# flux <- flux[i]
+
+
+### function to estimate the traffic states (LOS - Level of Service)
+traffic_states_fun <- function(time_at_mean_speed, max_speed,
+                               mean_speed, density){
+  ## urban traffic
+   if ((time_at_mean_speed > 85) & (max_speed == 50) & (mean_speed > 42.2) & (density <7))
+    LOS = "A"
+   else if ((time_at_mean_speed > 85) & (max_speed == 90) & (mean_speed > 76.5) & (density <7))
+    LOS = "A"
+   if ((time_at_mean_speed > 67) & (time_at_mean_speed < 85) & (max_speed == 50) & (mean_speed > 33.5) &  (mean_speed < 42.5) & (density < 11) & (density>7)) 
+    LOS = "B"
+  else if ((time_at_mean_speed > 67) & (time_at_mean_speed < 85) & (max_speed == 90) & (mean_speed >    60.3) &  (mean_speed < 76.5) & (density < 11) & (density>7)) 
+    LOS = "B"
+  ###....and so on......
+  ## strade a due corsie traffic
+  else if ((time_at_mean_speed <= 35) & (max_speed == 130) & (mean_speed > 90))
+    LOS = "A"
+  else if ((time_at_mean_speed > 35) & (time_at_mean_speed <= 50) & (max_speed == 130) & (mean_speed > 80) &  (mean_speed < 90)) 
+    LOS = "B"
+   else if ((time_at_mean_speed > 50) & (time_at_mean_speed <= 65) & (max_speed == 130) & (mean_speed > 70) &  (mean_speed < 80)) 
+    LOS = "C"
+    else if ((time_at_mean_speed > 65) & (time_at_mean_speed <= 80) & (max_speed == 130) & (mean_speed > 60) &  (mean_speed < 70)) 
+    LOS = "D"
+  else if ((time_at_mean_speed > 80) & (max_speed == 130) & (mean_speed <= 60)) 
+    LOS = "E"
+  ### use fluxes
+ else if(flux < 1440)
+   LOS = "A"
+ else if(flux < 2260 & flux > 1440)
+   LOS = "B"
+ else if(flux < 3150 & flux > 2260)
+   LOS = "C"
+ else if(flux < 3770 & flux > 3150)
+   LOS = "D"
+ else if (flux < 4120 & flux > 3770)
+   LOS = "E"
+  
+  else LOS = NA
+  
+  return(LOS)
+}
+
+#####################################################################################
+####################################################################################
+
+## https://moodle2.units.it/pluginfile.php/101161/mod_resource/content/1/PIV_2016-2017_L03_TrafficoCapacita.pdf
+
+### function to estimate the traffic states (LOS - Level of Service)
+traffic_states_fun <- function(density){
+  ## autostrade
+   if ((density <= 7))
+    LOS = "A"
+   else if ((density < 11) & (density > 7))
+    LOS = "B"
+
+   else if ((density < 16) & (density > 11))
+    LOS = "C"
+
+   else if ((density < 22) & (density > 16))  
+       LOS = "D"
+
+  else LOS = NA
+
+  return(LOS)
+}
+
+
+time_at_mean_speed = as.vector(density_by_day$perc_time_spent_foll)
+max_speed = density_by_day$max_speed
+mean_speed = density_by_day$mean_speed
+density = density_by_day$density
+flux = density_by_day$flux
+
+## get all Level of Services by hour and by direction
+los = NULL
+for (i in 1:nrow(density_by_day)) {
+  # print(paste(c("==========", i)))
+  LOS = traffic_states_fun(density[i])
+  # print(LOS)
+  los = rbind(los, LOS)
+}
+
+LOS <- as.data.frame(los)
+rownames(LOS) <- NULL
+names(LOS) <- "LOS"
+density_by_day <- cbind(density_by_day, LOS)
+
+# density_by_day <- as.data.frame(density_by_day)
+density_by_day$hour <- as.numeric(density_by_day$hour)
+density_by_day$LOS <- as.factor((density_by_day$LOS))
+
+p <- ggplot(data = density_by_day,
+              aes(hour, flux, fill = LOS)) + guides(fill=FALSE) +
+    geom_bar(stat = "identity") + 
+    facet_wrap( ~ direzione, ncol = 4) +
+    # facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
+    guides(fill=FALSE) +
+    # ylim(0, 1100000) +
+    theme_bw() +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+    ylab("flusso (veicoli/ora)") +            # Set y-axis label
+    xlab(expression(paste(""))) +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=9)) +
+    xlab("") +            # Set y-axis label
+    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+          axis.text.x  = element_text(angle=0, vjust=0.5, size=12, hjust = 0.5)) + 
+    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
+    scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
+      geom_text(aes(label = paste(LOS, sep = "")), size = 4, hjust = 0.5,  vjust = -0.5) +
+    ggtitle("FLusso orario conforme ad ANAS e Livelli di Servizio (1-18 Settembre 2017)") + 
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+  p
+
+````
 
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura BBB** Desnsità per ora su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
-
-
-#####################################################
-### comparing two distributions (ANAS and Viasat) ###
-#####################################################
-
-
-## Kolmogorov-Smirnov test
-## https://stats.stackexchange.com/questions/222294/understanding-kolmogorov-smirnov-test-in-r
-ks.test(velocita_ANAS$speed, data$speed)
-
-
-## Wilcoxon-Manney test)
-wilcox.test(velocita_ANAS$speed, data$speed, var.equal=TRUE)
 
 
 
-````
 
