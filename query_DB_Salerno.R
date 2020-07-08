@@ -1,4 +1,6 @@
 
+rm(list = ls())
+
 library(RPostgreSQL)
 library(lubridate)
 library(threadr)
@@ -6,11 +8,11 @@ library(stringr)
 library(ggplot2)
 library(dplyr)
 library(openair)
+library(gsubfn)
+library(mgsub)
 
-rm(list = ls())
 
-
-setwd("D:/ENEA_CAS_WORK/SENTINEL/ANAS")
+setwd("D:/ENEA_CAS_WORK/SENTINEL/viasat_data")
 
 # loads the PostgreSQL driver
 drv <- dbDriver("PostgreSQL")
@@ -50,6 +52,7 @@ dbExistsTable(conn_HAIG, "idterm_portata")
 ## get fields names of tables in the DB
 dbListFields(conn_HAIG, "mapmatching_2017")
 dbListFields(conn_HAIG, "routecheck_2017")
+dbListFields(conn_HAIG, "routecheck_2017_temp")
 dbListFields(conn_HAIG, "dataraw")
 dbListFields(conn_HAIG, "OSM_edges")
 
@@ -60,6 +63,10 @@ dbListFields(conn_HAIG, "OSM_edges")
 #                              LIMIT 100" )
 
 ## get all FCD data on the network section of the "Autostrada del Mediterraneo"
+
+# (32048592, 246509515), (246509515, 1110091820)  --> Avellino
+#  (1110091823,25844069), (25844069, 25844113)  <--- Salerno
+
 data = dbGetQuery(conn_HAIG, statement= paste ("
     SELECT
     split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm, u, v, \"TRIP_ID\",
@@ -72,30 +79,30 @@ data = dbGetQuery(conn_HAIG, statement= paste ("
 
 
 ## add "speed" from routecheck_2017 using field "idtrace" = id
-data =  dbGetQuery(conn_HAIG, "
-                     WITH path AS(SELECT 
-                            split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
-                            u, v, idtrace,
-                            timedate, mean_speed
-                            FROM mapmatching_2017
-                           WHERE (u, v) in (VALUES (32048592, 246509515),
-                           (246509515, 1110091820),
-                            (1110091823,25844069), (25844069, 25844113))
-                                )
-                             SELECT path.idterm, path.u, path.v, path.timedate,
-                                    path.mean_speed,
-                                    path.idtrace,
-                                    \"OSM_edges\".length,
-                                    \"OSM_edges\".highway,
-                                    \"OSM_edges\".name,
-                                    \"OSM_edges\".ref
-                        FROM path
-                            LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
-                                ")
+# data =  dbGetQuery(conn_HAIG, "
+#                      WITH path AS(SELECT 
+#                             split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
+#                             u, v, idtrace,
+#                             timedate, mean_speed
+#                             FROM mapmatching_2017
+#                            WHERE (u, v) in (VALUES (32048592, 246509515),
+#                            (246509515, 1110091820),
+#                             (1110091823,25844069), (25844069, 25844113))
+#                                 )
+#                              SELECT path.idterm, path.u, path.v, path.timedate,
+#                                     path.mean_speed,
+#                                     path.idtrace,
+#                                     \"OSM_edges\".length,
+#                                     \"OSM_edges\".highway,
+#                                     \"OSM_edges\".name,
+#                                     \"OSM_edges\".ref
+#                         FROM path
+#                             LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
+#                                 ")
 
 start_time = Sys.time()
 
-data_speed =  dbGetQuery(conn_HAIG, "
+data =  dbGetQuery(conn_HAIG, "
                      WITH path AS(SELECT 
                             split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
                             u, v,
@@ -122,11 +129,15 @@ stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
+write.csv(data, "FCD_data_speed.csv")
+
+min(data$timedate)
+max(data$timedate)
 
 
 start_time = Sys.time()
 ### https://www.postgresqltutorial.com/postgresql-left-join/
-data_speed =  dbGetQuery(conn_HAIG, "
+data =  dbGetQuery(conn_HAIG, "
 SELECT
     routecheck_2017.id,
     routecheck_2017.speed,
@@ -143,8 +154,8 @@ diff <- (stop_time - start_time)
 diff
 
 
-head(data_speed)
-data_speed <- data_speed[complete.cases(data_speed[, "idtrace"]), ]
+head(data)
+data <- data[complete.cases(data[, "idtrace"]), ]
 
 ## filter data with speel < 200 km/h
 data <- data %>%
@@ -152,7 +163,8 @@ data <- data %>%
 
 n_data <- data %>%
     group_by(u,v) %>%
-    summarise(AVG_speed = mean(mean_speed, na.rm=T))
+    summarise(AVG_speed = mean(mean_speed, na.rm=T),
+              instant_speed = mean(speed, na.rm=T))
 
 # WHERE (u, v) in (VALUES (25844045, 25844050), (25844050, 1110091861), (1110091861, 1868714795),
 #                  (1110091919, 1110091904), (1110091904,3371747395), (3371747395, 31396695))
@@ -162,15 +174,43 @@ n_data <- data %>%
 ## left join with "type" and "portata"
 data <- data %>%
     left_join(idterm_vehtype_portata, by = "idterm")
+write.csv(data, "FCD_data_speed.csv")
+
+###########################################################################
+###########################################################################
+###########################################################################
+
+data <- read.csv(paste0("FCD_data_speed.csv"),
+                                   header = T, sep=",")[-1]
+min(data$timedate)
+max(data$timedate)
+
+# (32048592, 246509515), (246509515, 1110091820)  --> Avellino
+#  (1110091823,25844069), (25844069, 25844113)  <--- Salerno
+
+data$u <- as.factor(data$u)
+data$u <- gsub("25844069", "--> Salerno", (data$u))
+data$u <- gsub("1110091823", "--> Salerno", (data$u))
+data$u <- gsub("32048592", "<-- Avellino", (data$u))
+data$u <- gsub("246509515", "<-- Avellino", (data$u))
+
+direzione <- data[, c("u", "idterm", "speed")]
+names(direzione)[names(direzione) == 'u'] <- 'direzione'
+
+total_counts_direzione <- direzione %>%
+    group_by(direzione) %>%
+    summarize(instant_speed=mean(speed),
+              count = length(idterm))
 
 
 p <- data %>%
-    ggplot(aes( (mean_speed), fill = as.factor(vehtype))) +
+    # ggplot(aes((speed), fill = as.factor(vehtype))) +
+    ggplot(aes((speed))) +
     # ggplot(aes( (mean_speed))) + 
     geom_density(alpha = 0.5) +
     # geom_histogram(binwidth=.05) +   ### counts
-    stat_function(fun = dnorm, args = list(mean = mean(data$mean_speed),
-                                           sd = sd(data$mean_speed))) +  ## fit with Gaussian
+    stat_function(fun = dnorm, args = list(mean = mean(data$speed),
+                                           sd = sd(data$speed)), colour = "red") +  ## fit with Gaussian
     # scale_x_continuous(trans='log10') +
     guides(fill=guide_legend(title="tipo veicolo")) +
     theme_bw() +
@@ -182,7 +222,7 @@ p <- data %>%
     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
     geom_vline(xintercept=90, color="red", linetype="dashed", size=0.5) +
-    ggtitle("Distribuzione delle velocita' dei veicoli per tipo di veicolo") +
+    ggtitle("Distribuzione delle velocita' instantanee") +
     theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
 p
 
@@ -192,7 +232,8 @@ library(MASS)
 library(fitdistrplus)
 # fitta <- fitdistr(data$mean_speed, "normal")
 # fitta
-fit_g  <- fitdist(data$mean_speed, "norm")
+## fit with a "gaussian/normal" distribution
+fit_g  <- fitdist(data$speed, "norm")
 summary(fit_g)
 denscomp(ft = fit_g, legendtext = "Normal")
 # par(mar = rep(2, 4))
@@ -205,21 +246,26 @@ names(data)[names(data) == 'timedate'] <- 'date'
 data[ , c("date", "mean_speed")]
 data_hourly <- data.frame(timeAverage(mydata = data[ , c("date", "mean_speed")],
                                     avg.time   = "hour", statistic  = "mean"))
-#start.date = round(min(DF$General$date, na.rm = TRUE), units = "hours"), 
-# end.date   = round(max(DF$General$date, na.rm = TRUE), units = "hours")))
 AAA <- data %>%
     group_by(Date=floor_date(date, "1 hour"), u,v) %>%
-    summarize(c1=mean(mean_speed))
+    summarize(instant_speed=mean(speed),
+              count = length(idterm))
 
 
-# CREATE TABLE albums_artists
-# ( album_id integer NOT NULL REFERENCES albums
-#     , artist_id integer NOT NULL REFERENCES artists
-#     , PRIMARY KEY (album_id, artist_id)
-# );
-# 
-# CREATE UNIQUE INDEX ON albums_artists (artist_id, album_id);
+total_counts_edges <- data %>%
+    group_by(u,v) %>%
+    summarize(instant_speed=mean(speed),
+              count = length(idterm))
 
+
+
+
+
+
+
+###############################################################################
+###############################################################################
+###############################################################################
 
 IDs_hourly = dbGetQuery(conn_HAIG, statement= paste ("WITH ids AS 
                                     (SELECT
@@ -264,18 +310,18 @@ IDs_hourly = dbGetQuery(conn_HAIG, statement= paste ("WITH ids AS
 # write.csv(IDs_hourly, "IDs_hourly.csv")
 
 
-# AAA = dbGetQuery(conn_HAIG, "SELECT
-#                                 id, idterm, \"TRIP_ID\", anomaly, path_time
-#                                 FROM routecheck_2017
-#                                 WHERE routecheck_2017.idterm::bigint = 4334573
-#                              ")
-# 
-# BBB = dbGetQuery(conn_HAIG, " SELECT
-#                                  id, idterm, timedate, longitude, latitude,
-#                                         panel, speed, progressive
-#                                  FROM dataraw
-#                                  WHERE dataraw.idterm::bigint = 4334573
-#                              ")
+AAA = dbGetQuery(conn_HAIG, "SELECT
+                                new_id, idterm, \"TRIP_ID\", anomaly, path_time
+                                FROM routecheck_2017_temp
+                                WHERE routecheck_2017_temp.idterm::bigint = 3184004
+                             ")
+
+BBB = dbGetQuery(conn_HAIG, " SELECT
+                                 id, idterm, timedate, longitude, latitude,
+                                        panel, speed, progressive
+                                 FROM dataraw
+                                 WHERE dataraw.idterm::bigint = 4334573
+                             ")
 # 
 # 
 # JJJ = dbGetQuery(conn_HAIG, " SELECT
@@ -293,8 +339,7 @@ IDs_hourly = dbGetQuery(conn_HAIG, statement= paste ("WITH ids AS
 #                                 
 #                              ")
 # 
-# 
-# 
+#
 # KKK_idtrace = dbGetQuery(conn_HAIG, "SELECT
 #                                  u, v,
 #                                     timedate, mean_speed, idtrace
@@ -339,41 +384,57 @@ dataraw_anomaly = dbGetQuery(conn_HAIG, "SELECT
                        dataraw.progressive,
                        routecheck_2017.anomaly,
                        routecheck_2017.\"TRIP_ID\",
-                       routecheck_2017.path_time
+                       routecheck_2017.path_time,
+                       routecheck_2017.id
                             FROM dataraw
                             LEFT JOIN
-                        routecheck_2017 ON dataraw.id::bigint = routecheck_2017.id::bigint")
+                        routecheck_2017 ON dataraw.id::bigint = routecheck_2017.id::bigint
+                             WHERE dataraw.idterm::bigint = 4334573")
 stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
+#######################################################################
+#### very important to check...JOIN dataraw with routecheck by "id" ###
+#######################################################################
 
-# join_routecheck_dataraw = dbGetQuery(conn_HAIG, "
-#                                     WITH ids AS(
-#                                     SELECT
-#                                         id, idterm, timedate, longitude, latitude,
-#                                         panel, speed, progressive
-#                                     FROM dataraw
-#                                     WHERE dataraw.idterm::bigint = 4334573
-#                                     LIMIT 100)
-#                                     SELECT 
-#                                            ids.id,
-#                                            ids.idterm,
-#                                            ids.timedate,
-#                                            ids.longitude,
-#                                            ids.latitude,
-#                                            ids.panel,
-#                                            ids.speed,
-#                                            ids.progressive,
-#                                            routecheck_2017.anomaly,
-#                                            routecheck_2017.\"TRIP_ID\",
-#                                            routecheck_2017.path_time,
-#                                            routecheck_2017.id
-#                                     FROM
-#                                     ids, routecheck_2017
-#                                  ")
+start_time = Sys.time()
+join_routecheck_dataraw = dbGetQuery(conn_HAIG, "
+                                    WITH ids AS(
+                                    SELECT
+                                        new_id, idterm, timedate, longitude, latitude,
+                                        panel, speed, progressive
+                                    FROM dataraw
+                                    WHERE dataraw.idterm::bigint = 3163842
+                                    )
+                                    SELECT
+                                           ids.new_id,
+                                           ids.idterm,
+                                           ids.timedate,
+                                           ids.longitude,
+                                           ids.latitude,
+                                           ids.panel,
+                                           ids.speed,
+                                           ids.progressive,
+                                           routecheck_2017_temp.anomaly,
+                                           routecheck_2017_temp.totalseconds,
+                                           routecheck_2017_temp.idtrajectory,
+                                           routecheck_2017_temp.segment,
+                                           routecheck_2017_temp.\"TRIP_ID\",
+                                           routecheck_2017_temp.path_time,
+                                           routecheck_2017_temp.new_id
+                                        FROM ids
+                                     LEFT JOIN
+                        routecheck_2017_temp ON ids.new_id::bigint = routecheck_2017_temp.new_id::bigint
+                                 ")
+stop_time = Sys.time()
+diff <- (stop_time - start_time)
+diff
 
-#  LEFT JOIN routecheck_2017 ON ids.id = routecheck_2017.id
+## remove rows with Na values
+join_routecheck_dataraw <- join_routecheck_dataraw[complete.cases(join_routecheck_dataraw), ]
+
+
 
 
 # viasat_fleet = dbGetQuery(conn_HAIG, "
