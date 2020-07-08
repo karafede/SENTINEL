@@ -17,7 +17,7 @@ output:
 
 ## 1. Rete stradale
 
-La sezione stradale sull''autostrada **A2**, lungo il tratto **671 (A2, Km 5+004, Latitudine = 40.7269766666667, Longitudine = 14.7757683333333)** è stato identificato dalla rete OpenStreetMap e convertito in forma di grafo digitale (**Figura 1**). Le coppie di nodi *(32048592, 246509515), (246509515, 1110091820)* verso la direzione **Avellino** e *(1110091823,25844069), (25844069, 25844113)* verso la direzione **Salerno** definiscono gli archi stradali sui quali è stato stimato il numero di passaggi ottenuti dai Floating Car Data (FCD) di Viasat.
+La sezione stradale sull''autostrada **A2**, lungo il tratto **671 (A2, Km 5+004, Latitudine = 40.72697, Longitudine = 14.7757)** è stato identificato dalla rete OpenStreetMap e convertito in forma di grafo digitale (**Figura 1**). Le coppie di nodi *(32048592, 246509515), (246509515, 1110091820)* verso la direzione **Avellino** e *(1110091823,25844069), (25844069, 25844113)* verso la direzione **Salerno** definiscono gli archi stradali sui quali è stato stimato il numero di passaggi ottenuti dai *Floating Car Data (FCD)* di Viasat.
 
 
 
@@ -98,6 +98,7 @@ pander(mapmatching_data, emphasize.strong.cols = 1, missing = "")
 
 
 I dati Viasat sono caratterizzati dalla presenza di un identificativo anonimo del veicolo **idterm**, di un *orario* (**timedate**),  della distanza progressiva percorsa da ogni veicolo (**progressive**), dal un segnale *on/off* (**panel**) che indica se il motore è acceso o spento. Infine, viene anche riportata l'*accuratezza* del dato GPS (**grade**) il cui valore varia da *1* (piu' accurato) a *50* (meno accurato). 
+I dati Viasat vengono forniti con una *time-zone* UTC e quindi, per confrontarli con i dati ANAS, la serie temporale è stata incrementata di due ore (GMT + 2) in riferimento all'ora legale in vigore in Italia durante il mese di Settembre 2017.
 
 Abbiamo analizzato una serie temporale di FCD Viasat per il periodo 1-18 Settembre 2017. Questo periodo coincide con quello in cui abbiamo a disposizione delle osservazioni di traffico effettuate da ANAS sulla stessa sezione stradale. E' quindi stato possibile fare un confronto. Per il periodo 1-18 Settembre 2018 abbiamo registrato un numero di **`r length(unique(data$idterm))`** veicoli che sono passati sulla sezione in esame dell'autostrada A2. Di questi veicoli, **`r length(unique(data_car$idterm))`** sono stati identificati come **automobili**, mentre **`r length(unique(data_fleet$idterm))`** sono stati identificati come **veicoli pesanti** (**Figura 2**). Quindi i veicoli pesanti rappresentanto circa il **14%** del dataset di dati. 
 
@@ -598,7 +599,7 @@ t_test <- t.test(velocita_ANAS$speed, data$speed,
        alternative = 'two.sided',     
        conf.level = .95)
 
-tvalue <- t_test$statistic
+tvalue <- round(t_test$statistic, digits = 0)
 pvalue <- t_test$p.value
 
 
@@ -662,9 +663,9 @@ w_value <- w_test$statistic
 ## Confronto tra dati ANAS e VIASAT
 ### a) t-test
 
-I box-plots riportati in **Figura 7** mostrano che i dati VIASAT hanno una variabilita' piu' grande rispetto ai dati ANAS. Inoltre, I dati VIASAT presentatno molti valori estremi ed anche un maggior numero di *outliers* riseptto ai dati ANAS. Malgrado queste differenze, gli interquartili delle due distribuzioni sono molto simili.
-Il t-test confronta la differenza osservata fra le medie delle due distribuzioni (ANAS e VIASAT). Se la differenza è maggiore di 0, allora si puo' parlare di indipendenza statistica tra le due distribuzioni.
- Poichè la differenza fra le medie è **`r tvalue` km/h**, l’ipotesi nulla è quindi da scartare e la differenza tra le distribuzioni è compresa fra −7.0 e 8.4 km/h (l’ipotesi nulla è che la differenza sia uguale 0). Inoltre il valore di p è **`r pvalue`** e quindi i dati osservati sono statisticamente significativi.
+I box-plots riportati in **Figura 7** mostrano che i dati VIASAT hanno una variabilita' piu' grande rispetto ai dati ANAS. Inoltre, I dati VIASAT presentano molti valori estremi ed anche un maggior numero di *outliers* riseptto ai dati ANAS. Malgrado queste differenze, gli interquartili delle due distribuzioni sono molto simili.
+Il *t-test* confronta la differenza osservata fra le medie delle due distribuzioni (ANAS e VIASAT). Se la differenza è maggiore di 0, allora si puo' parlare di indipendenza statistica tra le due distribuzioni.
+Poichè la differenza fra le medie è **`r tvalue` km/h**, l’ipotesi nulla è quindi da scartare e la differenza tra le distribuzioni è compresa fra −7.0 e 8.4 km/h (l’ipotesi nulla è che la differenza sia uguale 0). Inoltre la probabilità di ottenere risultati uguali o meno probabili di quello osservato durante il test, cioe' il **p value** è < 0.05 e quindi i dati osservati sono statisticamente significativi.
 
 *<br/><br/>*
 
@@ -843,7 +844,7 @@ Il test di Wilcoxon e il test di Mann-Whitney (anche noto come test U di Mann-Wh
 
 ## Stati del traffico (Livelli di Servizio LOS)
 
-Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essedo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il fattore di rappresentatività riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale in esame, e' stata stimata per ogni ora del giorno. Il rapporto tra il flusso orario e la velocità è risultato nella stima della densità che è rappresentata in **Figura 10**.  
+Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale in esame, e' stata stimata per ogni ora del giorno. Il rapporto tra il flusso orario e la velocità è risultato nella stima della densità che è rappresentata in **Figura 9**.  
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** Flusso per ora della giornata su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
@@ -923,7 +924,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 *<br/><br/>*
 
  
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 10.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino)."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino). Per il calcolo della densita' spaziale, i conteggi sono stati aggiustati secondo il fattore di rappresentativita' rispetto ai dati ANAS."}
  
 ########## density ##################################
 
@@ -1019,35 +1020,12 @@ p <- ggplot(data = density_by_day,
 ````
 
 *<br/><br/>*
-Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per quanto concerne le autostrade,gli stati del traffico per ogni ora della giornata e direzioni di marcia sono stati stimati attraverso la densita' veicolare.
-
-LIVELLI DI SERVIZIO: è definito come
-misura della prestazione della strada
-nello smaltire traffico.
-I livelli di servizio (LOS – Level Of
-Service) sono 6 da LOS “A” a LOS “F”.
-I LOS da “A” a “D” hanno una densità
-inferiore a quello corrispondente alla
-capacità.
-Il LOS E corrisponde alla densità critica
-e quindi alla capacità della strada.
-Il LOS “F” ha densità maggiori e quindi
-siamo in presenza di flusso instabile.
-
-LOS “A”: circolazione libera, massimo comfort, flusso stabile (Densità
-≤ 7 veic/km/cosia);
-LOS “B” circolazione libera, modesta riduzione della velocità, comfort accettabile, flusso
-stabile (7 < Densità
-≤ 11 veic/km/corsia);
-LOS “C”: primi vincoli alla circolazione, riduzione velocità, si riduce il comfort, flusso
-stabile (11 < Densità
-≤ 16 veic/km/corsia);
-LOS “D”: vincoli alla circolazione, basso comfort, flusso che può iniziare ad essere
-instabile (16 < Densità
-≤ 22 veic/km/corsia);
+Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per la sezione autostradale in esame, i livelli di servizio (Level of Service - LOS) o stati del traffico per ogni ora della giornata sono stati stimati usando la densita' veicolare. I livelli di servizio sono definiti come la misura della prestazione della strada nello smaltire il traffico. Per convenzione, i livelli di servizio  sono 6: da LOS “A” a LOS “F”. I LOS da “A” a “D” hanno una densità inferiore a quello corrispondente alla capacità. Il LOS E corrisponde alla densità critica
+e quindi alla capacità della strada. Il LOS “F” ha densità maggiori e quindi siamo in presenza di flusso instabile.
+Come mostrato in **Figura 10**, durante le ore della giornatam sulla sezione stradale in esame abbiamo stimato tre tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **B** (**flusso libero**: circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo è stato osservato durante la maggior parte delle ore della giornata ad eccezzione delle ore **11:00-20:00-21:00** dove è stato stimato un LOS **c**, 3) il LOS **C** (**flusso stabile**) indica che ci sono i primi vincoli alla circolazione con conseguente riduzione della e quindi con del comfort di guida.
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 11.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, mentre la lettera **C** indica un stato **STABILE**."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 10.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, mentre la lettera **C** indica un stato **STABILE**. Per il calcolo del flusso orario, i conteggi sono stati aggiustati secondo il fattore di rappresentativita' rispetto ai dati ANAS."}
 
 
 # i = 31
