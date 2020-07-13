@@ -52,6 +52,7 @@ dbExistsTable(conn_HAIG, "idterm_portata")
 ## get fields names of tables in the DB
 dbListFields(conn_HAIG, "mapmatching_2017")
 dbListFields(conn_HAIG, "routecheck_2017")
+dbListFields(conn_HAIG, "routecheck_2019")
 dbListFields(conn_HAIG, "routecheck_2017_temp")
 dbListFields(conn_HAIG, "dataraw")
 dbListFields(conn_HAIG, "OSM_edges")
@@ -129,7 +130,40 @@ stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
-write.csv(data, "FCD_data_speed.csv")
+
+### or just using dataraw.... #####################
+
+start_time = Sys.time()
+
+data =  dbGetQuery(conn_HAIG, "
+                     WITH path AS(SELECT 
+                            split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
+                            u, v,
+                            timedate, mean_speed, idtrace
+                            FROM mapmatching_2019
+                           WHERE (u, v) in (VALUES (32048592, 246509515),
+                           (246509515, 1110091820),
+                            (1110091823,25844069), (25844069, 25844113))
+                                )
+                             SELECT path.idterm, path.u, path.v, path.timedate,
+                                    path.mean_speed,
+                                    \"OSM_edges\".length,
+                                    \"OSM_edges\".highway,
+                                    \"OSM_edges\".name,
+                                    \"OSM_edges\".ref,
+                                    dataraw.speed,
+                                    dataraw.id
+                        FROM path
+                            LEFT JOIN dataraw ON path.idtrace = dataraw.id
+                            LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
+                                ")
+
+stop_time = Sys.time()
+diff <- (stop_time - start_time)
+diff
+
+
+write.csv(data, "FCD_data_speed_2019.csv")
 
 min(data$timedate)
 max(data$timedate)
@@ -395,8 +429,40 @@ diff <- (stop_time - start_time)
 diff
 
 #######################################################################
-#### very important to check...JOIN dataraw with routecheck by "id" ###
 #######################################################################
+###########################################################################
+#### very important to check...JOIN dataraw with routecheck by "new_id" ###
+###########################################################################
+###########################################################################
+
+## 1) in "dataraw" add id serial PRIMARY KEY
+## 2) in "dataraw" create index on "id"
+## 3) in "routecheck set "id" as bigint
+## 4) in "routecheck create index on "id"
+## 5) in "dataraw" create index on "iderm"
+
+
+# 3163842
+# 3272621
+# 2712721
+# 3183733
+# 3204142
+
+
+## "idterm" is a text
+routecheck_2019 = dbGetQuery(conn_HAIG, "
+                                    SELECT
+                                           anomaly,
+                                           totalseconds,
+                                           idtrajectory,
+                                           segment,
+                                           \"TRIP_ID\",
+                                           path_time
+                                    FROM routecheck_2019
+                                    WHERE routecheck_2019.idterm = '4491848'
+                                    ")
+
+
 
 start_time = Sys.time()
 join_routecheck_dataraw = dbGetQuery(conn_HAIG, "
@@ -408,7 +474,7 @@ join_routecheck_dataraw = dbGetQuery(conn_HAIG, "
                                     WHERE dataraw.idterm::bigint = 3163842
                                     )
                                     SELECT
-                                           ids.new_id,
+                                           /*ids.new_id,*/
                                            ids.idterm,
                                            ids.timedate,
                                            ids.longitude,
@@ -421,8 +487,8 @@ join_routecheck_dataraw = dbGetQuery(conn_HAIG, "
                                            routecheck_2017_temp.idtrajectory,
                                            routecheck_2017_temp.segment,
                                            routecheck_2017_temp.\"TRIP_ID\",
-                                           routecheck_2017_temp.path_time,
-                                           routecheck_2017_temp.new_id
+                                           routecheck_2017_temp.path_time
+                                           /*routecheck_2017_temp.new_id*/
                                         FROM ids
                                      LEFT JOIN
                         routecheck_2017_temp ON ids.new_id::bigint = routecheck_2017_temp.new_id::bigint
@@ -433,6 +499,12 @@ diff
 
 ## remove rows with Na values
 join_routecheck_dataraw <- join_routecheck_dataraw[complete.cases(join_routecheck_dataraw), ]
+
+
+
+
+
+
 
 
 

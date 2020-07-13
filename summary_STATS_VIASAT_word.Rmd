@@ -113,17 +113,74 @@ Per stabilire su quale arco un veicolo (FCD data) è transitato, abbiamo svilupp
 ```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 2.**"}
 
 
-direzione <- data[, c("direzione", "u", "idterm", "speed")]
+# direzione <- data[, c("direzione", "u", "v", "idterm", "speed", "timedate")]
 
-total_counts_direzione <- direzione %>%
+## get the DAY and HOUR (of the week) of observations
+data <- data %>%
+  filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
+  mutate(day = wday(timedate, label=TRUE)) %>%
+  mutate(hour = hour(timedate))
+data$day <- as.factor((data$day))
+data$hour <- as.factor((data$hour))
+
+## resample to 1 hour
+total_counts_direzione_all <- data %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
+    summarize(count = length(idterm))
+
+total_counts_direzione <- total_counts_direzione_all %>%
     group_by(direzione) %>%
-    summarize(instant_speed=mean(speed),
-              count_VIASAT = length(idterm))
+    summarize(count_VIASAT = sum(count))
+
+total_counts_direzione_type <- total_counts_direzione_all %>%
+    group_by(direzione, vehtype) %>%
+    summarize(count_VIASAT = sum(count))
+
+
+
+# total_counts_direzione <- direzione %>%
+#     filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
+#     group_by(direzione) %>%
+#     summarize(instant_speed=mean(speed),
+#               count_VIASAT = length(idterm))
+
+
+## load ANAS data
+### percentage of veicoli pesanti e auto (ANAS)
+counts_ANAS <- read.csv("D:/ENEA_CAS_WORK/SENTINEL/ANAS/STATS_passaggi_ANAS.csv")
+total_counts_ANAS <- counts_ANAS %>%
+  group_by(direzione) %>%
+  summarize(count_ANAS = sum(conteggi_totali))
+counts_ANAS <- counts_ANAS %>%
+  left_join(total_counts_ANAS, by = "direzione")
+counts_ANAS$fraction <- round(((counts_ANAS$conteggi_totali)/counts_ANAS$count_ANAS)*100, digits = 0)
+counts_ANAS <- counts_ANAS %>%
+  select(direzione, classi, conteggi_totali, fraction)
+names(counts_ANAS) <- c("direzione", "classi", "passaggi totali ANAS", "frazione %")
+
+
+
 ## add ANAS count
-total_counts_direzione$count_ANAS <- c(366108+83578, 342945+88338)
+total_counts_direzione$count_ANAS <- total_counts_ANAS$count_ANAS
 total_counts_direzione$`%_VIASAT` <- (total_counts_direzione$count_VIASAT/total_counts_direzione$count_ANAS)*100
-names(total_counts_direzione) <- c("direzione",  "velocità", "passaggi VIASAT", "passaggi ANAS", "%(VIASAT/ANAS)")
-total_counts_direzione$`%(VIASAT/ANAS)` <- round(total_counts_direzione$`%(VIASAT/ANAS)`, digits = 2)
+names(total_counts_direzione) <- c("direzione",  "passaggi totali VIASAT", "passaggi totali ANAS", "%(VIASAT/ANAS)")
+total_counts_direzione$`%(VIASAT/ANAS)` <- round(total_counts_direzione$`%(VIASAT/ANAS)`, digits = 1)
+penetration = mean(total_counts_direzione$`%(VIASAT/ANAS)`)
+
+
+
+### percentage of veicoli pesanti e auto (VIASAT)
+total_counts_direzione_type <- total_counts_direzione_type %>%
+  left_join(total_counts_direzione, by = "direzione")
+total_counts_direzione_type <- total_counts_direzione_type %>%
+  select(direzione, vehtype, count_VIASAT, `passaggi totali VIASAT`)
+total_counts_direzione_type$fraction <- round(((total_counts_direzione_type$count_VIASAT)/total_counts_direzione_type$`passaggi totali VIASAT`)*100, digits = 0)
+total_counts_direzione_type <- total_counts_direzione_type %>%
+  select(direzione, vehtype, count_VIASAT, fraction)
+names(total_counts_direzione_type) <-  c("direzione", "classi", "passaggi totali VIASAT", "frazione %") 
+
+
+
 
 Caption <- paste0("**Tabella 2.** Numero totale di passaggi di autoveicoli sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017. Confronto con dati ANAS per lo stesso periodo temporale.")
 set.caption(Caption)
@@ -138,40 +195,60 @@ pander(total_counts_direzione, emphasize.strong.cols = 1, missing = "")
 *<br/><br/>*
 
 Mentre le osservazioni ANAS sono riferite a conteggi in tempo reale di tutti i veicoli,i dati Viasat rappresentano solo una piccola frazione dei veicoli transitati sulla sezione stradale in esame.  
-Come ripotato in **Tabella 3**, il mumero totale di passaggi di dati Viasat rappresenta circa il **3%** dei dati ANAS su entrambe le direzioni di marcia.
+Come ripotato in **Tabella 3**, il mumero totale di passaggi di dati Viasat rappresenta circa il **`r penetration`%** dei dati ANAS su entrambe le direzioni di marcia.
 
 *<br/><br/>*
 
 
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 2a.**"}
+
+
+Caption <- paste0("**Tabella 2a.** Rilevazioni ANAS per il numero totale di passaggi di auto e mezzi pesanti sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017.")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(counts_ANAS, emphasize.strong.cols = 1, missing = "")
+
+
+```
+
+
+*<br/><br/>*
+
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 2b.**"}
+
+
+Caption <- paste0("**Tabella 2a.** Rilevazioni VIASAT per il numero totale di passaggi di auto e mezzi pesanti sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017.")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(total_counts_direzione_type, emphasize.strong.cols = 1, missing = "")
+
+
+```
+
+
+*<br/><br/>*
+
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 2.** Numero di passaggi totali per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi sulle due direzioni di marcia: --> Salerno e <-- Avellino."}
 
 
-direzione <- data[, c("direzione", "u", "idterm", "vehtype")]
-
-total_counts_type_direzione <- direzione %>%
-    group_by(direzione,
-             vehtype) %>%
-    summarize(count_VIASAT = length(idterm))
-
-total_counts_type_direzione <- total_counts_type_direzione %>%
-  left_join(total_counts_direzione, by = c("direzione"))
-
-total_counts_type_direzione <- total_counts_type_direzione %>%
-  mutate(norm_conteggi = (count_VIASAT)/(`passaggi VIASAT`)*100)
-total_counts_type_direzione$norm_conteggi <- round(total_counts_type_direzione$norm_conteggi, digits = 0)
-
-categories <- as.character( unique(total_counts_type_direzione$vehtype))
+total_counts_direzione_type <- as.data.frame(total_counts_direzione_type)
+categories <- as.character( unique(total_counts_direzione_type$classi))
 
 ### plot passaggi #####
 #######################
 
-q <- ggplot(data = total_counts_type_direzione,
-            aes(vehtype, count_VIASAT, fill = direzione)) +
+q <- ggplot(data = total_counts_direzione_type,
+            aes(classi, `passaggi totali VIASAT`, fill = direzione)) +
   theme_bw() +
   geom_bar(stat = "identity", position = position_stack()) +
   scale_x_discrete(limits = categories) +
-  geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
-            position = position_stack(0.8), size=5)+
+  geom_text_repel(aes(label=`frazione %`), vjust=1, color="black",
+            position = position_stack(0.8), size=5) +
   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
   theme(axis.title.x = element_blank()) +
   ylab(expression(paste("numero di passaggi"))) +
@@ -203,33 +280,64 @@ data$month <- format(data$timedate, format = "%b")
 
 ## get the DAY and HOUR (of the week) of observations
 data <- data %>%
+  filter(u %in% c(25844069, 32048592) & v %in% c(25844113, 246509515)) %>%
   mutate(day = wday(timedate, label=TRUE)) %>%
   mutate(hour = hour(timedate))
 data$day <- as.factor((data$day))
 data$hour <- as.factor((data$hour))
 
-
-## get all passaggi (conteggi) by hour
+## resample to 1 hour
 VIASAT_STATS_passaggi_daily <- data %>%
-    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, day) %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
     summarize(count = length(idterm))
 
-all_vehtype <- data %>%
-  group_by(Date=floor_date(timedate, "1 hour"), direzione, day) %>%
-  summarize(count = length(idterm))
+VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
+mutate(day = wday(Date, label=TRUE)) %>%
+  mutate(hour = hour(Date))
+VIASAT_STATS_passaggi_daily$day <- as.factor((VIASAT_STATS_passaggi_daily$day))
+VIASAT_STATS_passaggi_daily$hour <- as.factor((VIASAT_STATS_passaggi_daily$hour))
 
 
-# media di tutti i tipi di conteggi per i passaggi di veicoli
+# somma di tutti i tipi di conteggi per i passaggi di veicoli
+VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
+  group_by(direzione,
+           vehtype,
+           day, hour) %>%
+  summarise(conteggi_per_tipo = mean(count, na.rm = TRUE))
+
 VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
   group_by(direzione,
            vehtype,
            day) %>%
-  summarise(conteggi_per_tipo = mean(count, na.rm = TRUE))
+  summarise(conteggi_per_tipo = sum(conteggi_per_tipo, na.rm = TRUE))
+
+
+
+### for the whole vehycles
+## resample to 1 hour
+all_vehtype <- data %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione) %>%
+    summarize(count = length(idterm))
 
 all_vehtype <- all_vehtype %>%
-   group_by(direzione,
-           day) %>%
+mutate(day = wday(Date, label=TRUE)) %>%
+  mutate(hour = hour(Date))
+all_vehtype$day <- as.factor((all_vehtype$day))
+all_vehtype$hour <- as.factor((all_vehtype$hour))
+
+
+# somma di tutti i tipi di conteggi per i passaggi di veicoli
+all_vehtype <- all_vehtype %>%
+  group_by(direzione,
+           day, hour) %>%
   summarise(conteggi_totali = mean(count, na.rm = TRUE))
+
+all_vehtype <- all_vehtype %>%
+  group_by(direzione,
+           day) %>%
+  summarise(conteggi_totali = sum(conteggi_totali, na.rm = TRUE))
+
+
 
 
 VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
@@ -244,6 +352,7 @@ VIASAT_STATS_passaggi_daily$norm_conteggi <- round(VIASAT_STATS_passaggi_daily$n
 
 
 VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily[order(-VIASAT_STATS_passaggi_daily$conteggi_totali),]
+
 VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily[order(-VIASAT_STATS_passaggi_daily$norm_conteggi),]
 
 
@@ -262,7 +371,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_daily,
     # facet_wrap( ~ vehtype, ncol = 4) +
     facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    ylim(0, 80) +
+    ylim(0, 1000) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -285,25 +394,34 @@ p <- ggplot(data = VIASAT_STATS_passaggi_daily,
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4.** Numero di passaggi totali per ora della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino)."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4.** Numero di passaggi orari nei giorni feriali per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino)."}
 
 ################################
 ### summary stats by hour ######
 ################################
 
-## get all passaggi (conteggi) by hour
+
+## resample to 1 hour
 VIASAT_STATS_passaggi_hourly <- data %>%
-    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, day, hour) %>%
-    summarize(instant_speed=mean(speed),
-              count = length(idterm))
+   filter(!day %in% c("sab", "dom")) %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
+    summarize(count = length(idterm))
 
-VIASAT_STATS_passaggi_hourly$vehtype <- as.factor(VIASAT_STATS_passaggi_hourly$vehtype)
+VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+mutate(day = wday(Date, label=TRUE)) %>%
+  mutate(hour = hour(Date))
+VIASAT_STATS_passaggi_hourly$day <- as.factor((VIASAT_STATS_passaggi_hourly$day))
+VIASAT_STATS_passaggi_hourly$hour <- as.factor((VIASAT_STATS_passaggi_hourly$hour))
 
+
+# somma di tutti i tipi di conteggi per i passaggi di veicoli
 VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
   group_by(direzione,
            vehtype,
            hour) %>%
   summarise(conteggi_totali = mean(count, na.rm = TRUE))
+
+
 
 VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
  
@@ -338,7 +456,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi per ora della giornata (1-18 Settembre 2017)") + 
+    ggtitle("Numero totale di passaggi orari nei giorni feriali (1-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -348,6 +466,296 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 
 *<br/><br/>*
 
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4a.** Numero di passaggi orari nei giorni festivi per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino)."}
+
+################################
+### summary stats by hour ######
+################################
+
+
+## resample to 1 hour
+VIASAT_STATS_passaggi_hourly <- data %>%
+   filter(day %in% c("sab", "dom")) %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
+    summarize(count = length(idterm))
+
+VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+mutate(day = wday(Date, label=TRUE)) %>%
+  mutate(hour = hour(Date))
+VIASAT_STATS_passaggi_hourly$day <- as.factor((VIASAT_STATS_passaggi_hourly$day))
+VIASAT_STATS_passaggi_hourly$hour <- as.factor((VIASAT_STATS_passaggi_hourly$hour))
+
+
+# somma di tutti i tipi di conteggi per i passaggi di veicoli
+VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+  group_by(direzione,
+           vehtype,
+           hour) %>%
+  summarise(conteggi_totali = mean(count, na.rm = TRUE))
+
+
+
+VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
+ 
+VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly[order(-VIASAT_STATS_passaggi_hourly$conteggi_totali),]
+
+VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hour)
+
+#### plot
+
+# VIASAT_STATS_passaggi_hourly_SALERNO <- VIASAT_STATS_passaggi_hourly %>%
+#    filter(direzione == "--> Salerno") 
+
+p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
+              aes(hour, conteggi_totali, fill = hour)) + guides(fill=FALSE) +
+    geom_bar(stat = "identity") + 
+    # facet_wrap( ~ vehtype, ncol = 4) +  
+    facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
+    guides(fill=FALSE) +
+    # ylim(0, 1100000) +
+    theme_bw() +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+    ylab("numero di passaggi") +            # Set y-axis label
+    xlab(expression(paste(""))) +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=9)) +
+    xlab("") +            # Set y-axis label
+    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+          axis.text.x  = element_text(angle=0, vjust=0.5, size=12, hjust = 0.5)) + 
+    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
+    scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
+    ggtitle("Numero totale di passaggi orari nei giorni festivi (1-18 Sett. 2017)") + 
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+  p
+
+
+```
+
+
+*<br/><br/>*
+
+Dall'analisi dei valori di portata massima dei veicoli pesanti è stato osservato un valore minimio di 1180 kg ed un valore massimo di 39000 kg. Tuttavia, come illustrato in **Figura 5**, circa il 55% dei veicoli pesanti ha una portata massima di 18000 kg seguiti dall'11% e dal 7.5% con una portata di 3500 kg e 26000 kg, rispettivamente.
+
+
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=6,  fig.cap ="**Figura AAA.** Classificazione dei veicoli pesanti per *portata* su un tratto dell'autostrada A2 (Salerno-Avellino)."}
+
+####################
+### PORTATA  #######
+####################
+
+
+portata_veh <- data %>%
+  filter(vehtype == "veicoli pesanti")
+## skip NA values
+portata_veh <- portata_veh[!is.na(portata_veh["portata"]),]
+
+
+## resample to 1 hour and group by portata
+portata_veh <- portata_veh %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, portata, speed) %>%
+    summarize(count = length(idterm))
+  
+
+portata_veh <- portata_veh %>%
+mutate(day = wday(Date, label=TRUE)) %>%
+  mutate(hour = hour(Date))
+portata_veh$day <- as.factor((portata_veh$day))
+portata_veh$hour <- as.factor((portata_veh$hour))
+
+
+
+###############################################
+### LIMITI velocita' mezzi pesanti  ###########
+###############################################
+
+
+### function to estimate the traffic states (LOS - Level of Service)
+limits_pesanti_fun <- function(portata, speed){
+  ## autostrade
+   if ((portata >= 12000) & (speed > 80))
+    OVER_LIMIT = "YES"
+   else if ((portata < 12000) & (portata >= 350) & (speed > 100))
+    OVER_LIMIT = "YES"
+
+
+  else OVER_LIMIT = "NO"
+
+  return(OVER_LIMIT)
+}
+
+
+portata = portata_veh$portata
+speed = portata_veh$speed
+
+## get all Level of Services by hour and by direction
+over_limit = NULL
+for (i in 1:nrow(portata_veh)) {
+  # print(paste(c("==========", i)))
+  OVER_LIMIT = limits_pesanti_fun(portata[i], speed[i])
+  # print(OVER_LIMIT)
+  over_limit = rbind(over_limit, OVER_LIMIT)
+}
+
+OVER_LIMIT <- as.data.frame(over_limit)
+rownames(OVER_LIMIT) <- NULL
+names(OVER_LIMIT) <- "superamento lim. velocità"
+portata_veh <- cbind(portata_veh, OVER_LIMIT)
+
+
+superamenti <- portata_veh %>%
+  group_by(direzione, portata) %>%
+  filter(`superamento lim. velocità` == "YES") %>%
+  summarize(count_superamenti = length(`superamento lim. velocità`))
+
+
+##############################################################
+##############################################################
+
+
+min_portata <- min(portata_veh$portata)
+max_portata <- max(portata_veh$portata)
+
+portata_veh <- portata_veh %>%
+  group_by(portata) %>%
+  summarise(conteggi = sum(count, na.rm = TRUE))
+
+all_portata_veh <- portata_veh %>%
+  summarize(total = sum(conteggi))
+
+
+portata_veh <- as.data.frame(portata_veh)
+portata_veh$percentage <- round(((portata_veh$conteggi)/(all_portata_veh$total))*100, digits = 1)
+
+
+q <- ggplot(data = portata_veh, 
+            aes(portata, conteggi, fill = portata)) +
+    theme_bw() +
+   geom_line(alpha=1, col="red", size = 1) +
+   geom_point(alpha=1, col="red", size = 2) +
+    guides(fill=FALSE) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13, colour = "black")) +
+  theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+  # theme(axis.title.x = element_blank()) +  
+  xlab("portata (kg)") +
+  ylab("conteggi") +   
+     # geom_text(aes(label = paste(percentage, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
+  ylim(0, 2200) +
+   theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+  ggtitle("Conteggi dei principali veicoli pesanti per valore della loro portata (1-18 Sett. 2017)") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
+q
+
+
+portata_veh <- portata_veh %>%
+  filter(percentage > 1)
+
+
+# file:///C:/Users/karaf/Downloads/la_classificazione_delle_strade_ed_i_livelli_di_servizio.pdf
+# http://www.triesteprima.it/motori/veicoli-commerciali/mezzi-pesanti-regole-e-limiti-di-velocita.html
+
+portata_veh$portata <- factor(portata_veh$portata, levels = portata_veh$portata[order(portata_veh$conteggi)])
+
+
+q <- ggplot(data = portata_veh, 
+            aes(portata, conteggi, fill = portata)) +
+    theme_bw() +
+  geom_bar(stat = "identity") + 
+  theme(strip.text.x = element_text(size = 13, colour = "black")) +
+  guides(fill=FALSE) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13, colour = "black")) +
+  theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+  # theme(axis.title.x = element_blank()) +  
+  xlab("portata (kg)") +
+  ylab("conteggi") +   
+     geom_text(aes(label = paste(percentage, sep = "")), size = 5, hjust = 0.5,  vjust = -0.5) +
+  ylim(0, 2200) +
+   theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+  ggtitle("Conteggi dei principali veicoli pesanti per valore della loro portata (1-18 Sett. 2017)") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
+q
+
+
+```
+
+
+*<br/><br/>*
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura BBB.** ."}
+
+######################################################
+### superamenti limite velocità veicoli pesanti ######
+######################################################
+
+superamenti <- as.data.frame(superamenti)
+superamenti$portata <- as.factor(superamenti$portata)
+
+all_superamenti <- sum(superamenti$count_superamenti)
+# all_portata_veh$total
+all_NO_superamenti <- all_portata_veh$total - all_superamenti
+
+count_superamenti <- data.frame(veicoli_pesanti = c(all_NO_superamenti, all_superamenti), 
+                                superamenti =c("", "superamenti"),
+                                perc_superamenti = c("", round(((all_superamenti)/(all_portata_veh$total))*100, digits = 0)))
+count_superamenti$classi <- "veicoli pesanti"
+
+categories <- as.character( unique(count_superamenti$classi))
+
+
+
+### plot passaggi #####
+#######################
+
+portata_veh$classi <- "veicoli pesanti"
+
+q <- ggplot(data = portata_veh,
+            aes(classi, conteggi, fill = portata)) +
+  theme_bw() +
+  geom_bar(stat = "identity", position = position_stack()) 
+   # guides(fill=FALSE)
+  q
+
+q <- ggplot(data = count_superamenti,
+            aes(classi, veicoli_pesanti, fill = veicoli_pesanti)) +
+  theme_bw() +
+  geom_bar(stat = "identity", position = position_stack()) +
+  # guides(fill=FALSE) +
+  scale_x_discrete(limits = categories) +
+  geom_text_repel(aes(label=perc_superamenti), vjust=1, color="white",
+            position = position_stack(0.4), size=5) +
+  theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
+  theme(axis.title.x = element_blank()) +
+  ylab(expression(paste("numero di passaggi"))) +
+  xlab(expression(paste(""))) +
+  theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
+  theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+          axis.text.x  = element_text(angle=0, vjust=1, ,hjust=0.5, size=14, face="bold")) +
+  ggtitle("Numero totale di passaggi di veicoli pesanti (1-18 Sett. 2017)") +
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
+q
+
+
+
+
+```
+
+
+
+*<br/><br/>*
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno)"}
 
@@ -1022,7 +1430,7 @@ p <- ggplot(data = density_by_day,
 *<br/><br/>*
 Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per la sezione autostradale in esame, i livelli di servizio (Level of Service - LOS) o stati del traffico per ogni ora della giornata sono stati stimati usando la densita' veicolare. I livelli di servizio sono definiti come la misura della prestazione della strada nello smaltire il traffico. Per convenzione, i livelli di servizio  sono 6: da LOS “A” a LOS “F”. I LOS da “A” a “D” hanno una densità inferiore a quello corrispondente alla capacità. Il LOS E corrisponde alla densità critica
 e quindi alla capacità della strada. Il LOS “F” ha densità maggiori e quindi siamo in presenza di flusso instabile.
-Come mostrato in **Figura 10**, durante le ore della giornatam sulla sezione stradale in esame abbiamo stimato tre tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **B** (**flusso libero**: circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo è stato osservato durante la maggior parte delle ore della giornata ad eccezzione delle ore **11:00-20:00-21:00** dove è stato stimato un LOS **c**, 3) il LOS **C** (**flusso stabile**) indica che ci sono i primi vincoli alla circolazione con conseguente riduzione della e quindi con del comfort di guida.
+Come mostrato in **Figura 10**, durante le ore della giornata sulla sezione stradale in esame abbiamo stimato quattro tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **B** (**flusso libero**: circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo è stato osservato durante la maggior parte delle ore della giornata ad eccezzione delle ore **11:00-20:00-21:00** dove è stato stimato un LOS **c**, 3) il LOS **C** (**flusso stabile**) indica che ci sono i primi vincoli alla circolazione con conseguente riduzione della e quindi con del comfort di guida. 4) il LOS **D** (**flusso instabile**) indica che ci sono vincoli alla circolazione, basso comfort ed il flusso che può iniziare ad essere instabile.
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 10.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (1-18 Settembre 2017; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, mentre la lettera **C** indica un stato **STABILE**. Per il calcolo del flusso orario, i conteggi sono stati aggiustati secondo il fattore di rappresentativita' rispetto ai dati ANAS."}
