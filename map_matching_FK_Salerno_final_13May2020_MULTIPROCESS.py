@@ -72,7 +72,7 @@ conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
 cur_HAIG = conn_HAIG.cursor()
 
 # erase existing table
-# cur_HAIG.execute("DROP TABLE IF EXISTS mapmatching_2017 CASCADE")
+# cur_HAIG.execute("DROP TABLE IF EXISTS mapmatching_2019 CASCADE")
 # conn_HAIG.commit()
 
 # Function to generate WKB hex
@@ -92,7 +92,9 @@ engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/
 # all_ID_TRACKS = [int(i) for i in all_ID_TRACKS]
 
 ## reload 'all_ID_TRACKS' as list
-with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2017_new.txt", "r") as file:
+# with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019.txt", "r") as file:
+#     all_ID_TRACKS = eval(file.readline())
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019_new.txt", "r") as file:
     all_ID_TRACKS = eval(file.readline())
 
 # ### get all terminals corresponding to 'fleet'
@@ -129,7 +131,7 @@ def func(arg):
     track_ID = str(track_ID)
     print("idterm:", track_ID)
     viasat_data = pd.read_sql_query('''
-                SELECT * FROM public.routecheck_2017 
+                SELECT * FROM public.routecheck_2019 
                 WHERE "idterm" = '%s' ''' % track_ID, conn_HAIG)
     ### FILTERING #############################################
     viasat_data = viasat_data[viasat_data.anomaly != "IQc345d"]
@@ -801,20 +803,27 @@ def func(arg):
                         if len(edges_matched_route_GV) > 0:
                             ## populate a DB
                             try:
-                                final_map_matching_table_GV = edges_matched_route_GV[['idtrajectory', 'geometry',
+                                # final_map_matching_table_GV = edges_matched_route_GV[['idtrajectory', 'geometry',
+                                #                                                       'u', 'v',
+                                #                                                       'idtrace', 'sequenza', 'mean_speed',
+                                #                                                       'timedate', 'totalseconds',
+                                #                                                       'TRIP_ID',
+                                #                                                       'length', 'highway', 'name', 'ref']]
+
+                                final_map_matching_table_GV = edges_matched_route_GV[['idtrajectory',
                                                                                       'u', 'v',
-                                                                                      'idtrace', 'sequenza', 'mean_speed',
-                                                                                      'timedate', 'totalseconds',
-                                                                                      'TRIP_ID',
-                                                                                      'length', 'highway', 'name', 'ref']]
+                                                                                      'idtrace', 'sequenza',
+                                                                                      'mean_speed',
+                                                                                      'timedate',
+                                                                                      'TRIP_ID']]
 
                                 final_map_matching_table_GV = gpd.GeoDataFrame(final_map_matching_table_GV)
 
                                 ### Connect to a DB and populate the DB  ###
                                 connection = engine.connect()
-                                final_map_matching_table_GV['geom'] = final_map_matching_table_GV['geometry'].apply(wkb_hexer)
-                                final_map_matching_table_GV.drop('geometry', 1, inplace=True)
-                                final_map_matching_table_GV.to_sql("mapmatching_2017", con=connection, schema="public",
+                                # final_map_matching_table_GV['geom'] = final_map_matching_table_GV['geometry'].apply(wkb_hexer)
+                                # final_map_matching_table_GV.drop('geometry', 1, inplace=True)
+                                final_map_matching_table_GV.to_sql("mapmatching_2019", con=connection, schema="public",
                                                    if_exists='append')
                                 connection.close()
                             except KeyError:
@@ -830,7 +839,7 @@ def func(arg):
 
 if __name__ == '__main__':
     # pool = mp.Pool(processes=mp.cpu_count()) ## use all available processors
-    pool = mp.Pool(processes=60)     ## use 60 processors
+    pool = mp.Pool(processes=58)     ## use 60 processors
     print("++++++++++++++++ POOL +++++++++++++++++", pool)
     results = pool.map(func, [(last_track_idx, track_ID) for last_track_idx, track_ID in enumerate(all_ID_TRACKS)])
     pool.close()
