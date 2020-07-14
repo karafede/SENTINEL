@@ -37,7 +37,7 @@ os.chdir('D:/ENEA_CAS_WORK/SENTINEL/viasat_data')
 os.getcwd()
 
 ## load grafo
-file_graphml = 'Fisciano__Italy_70km.graphml'
+file_graphml = 'Fisciano__Italy_50km.graphml'
 grafo_ALL = ox.load_graphml(file_graphml)
 ## ox.plot_graph(grafo_ALL)
 # gdf_nodes, gdf_edges = ox.graph_to_gdfs(grafo)
@@ -130,7 +130,7 @@ with open("idterms_fleet.txt", "r") as file:
 # track_ID = '2400305'       # type 2 (2017)
 # track_ID = '3246838'
 # all_ID_TRACKS = ['3246838']
-track_ID = '3251183'
+track_ID = '3535582'
 
 ################################################################################
 # create basemap
@@ -147,7 +147,7 @@ my_map = folium.Map([ave_LAT, ave_LON], zoom_start=11, tiles='cartodbpositron')
 for last_track_idx, track_ID in enumerate(all_ID_TRACKS):
     track_ID = str(track_ID)
     viasat_data = pd.read_sql_query('''
-                SELECT * FROM public.routecheck_2017 
+                SELECT * FROM public.routecheck_2019 
                 WHERE "idterm" = '%s' ''' % track_ID, conn_HAIG)
     viasat_data = viasat_data[viasat_data.anomaly != "IQc345d"]
     viasat_data = viasat_data[viasat_data.anomaly != "EQc3456"]
