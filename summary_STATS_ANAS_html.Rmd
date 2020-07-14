@@ -533,7 +533,7 @@ p <- ggplot(data = STATS_passaggi_daily_SALERNO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, col = "#ffffff",  vjust = 1) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (ANAS, 1-18 Settembre 2017)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (ANAS, 1-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -605,7 +605,7 @@ p <- ggplot(data = STATS_passaggi_daily_AVELLINO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, col = "#ffffff",  vjust = 1) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (1-18 Settembre 2017)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (<-- Avellino) (1-18 Sett, 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
