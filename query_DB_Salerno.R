@@ -68,15 +68,15 @@ dbListFields(conn_HAIG, "OSM_edges")
 # (32048592, 246509515), (246509515, 1110091820)  --> Avellino
 #  (1110091823,25844069), (25844069, 25844113)  <--- Salerno
 
-data = dbGetQuery(conn_HAIG, statement= paste ("
-    SELECT
-    split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm, u, v, \"TRIP_ID\",
-                                    timedate, mean_speed
-    FROM
-    mapmatching_2017
-    WHERE (u, v) in (VALUES (32048592, 246509515), (246509515, 1110091820),
-                            (1110091823,25844069), (25844069, 25844113))
-    "))
+# data = dbGetQuery(conn_HAIG, statement= paste ("
+#     SELECT
+#     split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm, u, v, \"TRIP_ID\",
+#                                     timedate, mean_speed
+#     FROM
+#     mapmatching_2017
+#     WHERE (u, v) in (VALUES (32048592, 246509515), (246509515, 1110091820),
+#                             (1110091823,25844069), (25844069, 25844113))
+#     "))
 
 
 ## add "speed" from routecheck_2017 using field "idtrace" = id
@@ -101,34 +101,33 @@ data = dbGetQuery(conn_HAIG, statement= paste ("
 #                             LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
 #                                 ")
 
-start_time = Sys.time()
-
-data =  dbGetQuery(conn_HAIG, "
-                     WITH path AS(SELECT 
-                            split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
-                            u, v,
-                            timedate, mean_speed, idtrace
-                            FROM mapmatching_2017
-                           WHERE (u, v) in (VALUES (32048592, 246509515),
-                           (246509515, 1110091820),
-                            (1110091823,25844069), (25844069, 25844113))
-                                )
-                             SELECT path.idterm, path.u, path.v, path.timedate,
-                                    path.mean_speed,
-                                    \"OSM_edges\".length,
-                                    \"OSM_edges\".highway,
-                                    \"OSM_edges\".name,
-                                    \"OSM_edges\".ref,
-                                    routecheck_2017.speed,
-                                    routecheck_2017.id
-                        FROM path
-                            LEFT JOIN routecheck_2017 ON path.idtrace = routecheck_2017.id
-                            LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
-                                ")
-
-stop_time = Sys.time()
-diff <- (stop_time - start_time)
-diff
+# start_time = Sys.time()
+# data =  dbGetQuery(conn_HAIG, "
+#                      WITH path AS(SELECT 
+#                             split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
+#                             u, v,
+#                             timedate, mean_speed, idtrace
+#                             FROM mapmatching_2017
+#                            WHERE (u, v) in (VALUES (32048592, 246509515),
+#                            (246509515, 1110091820),
+#                             (1110091823,25844069), (25844069, 25844113))
+#                                 )
+#                              SELECT path.idterm, path.u, path.v, path.timedate,
+#                                     path.mean_speed,
+#                                     \"OSM_edges\".length,
+#                                     \"OSM_edges\".highway,
+#                                     \"OSM_edges\".name,
+#                                     \"OSM_edges\".ref,
+#                                     routecheck_2017.speed,
+#                                     routecheck_2017.id
+#                         FROM path
+#                             LEFT JOIN routecheck_2017 ON path.idtrace = routecheck_2017.id
+#                             LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
+#                                 ")
+# 
+# stop_time = Sys.time()
+# diff <- (stop_time - start_time)
+# diff
 
 
 ### or just using dataraw.... #####################
@@ -169,27 +168,27 @@ min(data$timedate)
 max(data$timedate)
 
 
-start_time = Sys.time()
-### https://www.postgresqltutorial.com/postgresql-left-join/
-data =  dbGetQuery(conn_HAIG, "
-SELECT
-    routecheck_2017.id,
-    routecheck_2017.speed,
-    mapmatching_2017.idtrace,
-    mapmatching_2017.u,
-    mapmatching_2017.v,
-    mapmatching_2017.mean_speed
-FROM
-    routecheck_2017
-LEFT JOIN mapmatching_2017 ON routecheck_2017.id::bigint = mapmatching_2017.idtrace::bigint ")
+# start_time = Sys.time()
+# ### https://www.postgresqltutorial.com/postgresql-left-join/
+# data =  dbGetQuery(conn_HAIG, "
+# SELECT
+#     routecheck_2017.id,
+#     routecheck_2017.speed,
+#     mapmatching_2017.idtrace,
+#     mapmatching_2017.u,
+#     mapmatching_2017.v,
+#     mapmatching_2017.mean_speed
+# FROM
+#     routecheck_2017
+# LEFT JOIN mapmatching_2017 ON routecheck_2017.id::bigint = mapmatching_2017.idtrace::bigint ")
+# 
+# stop_time = Sys.time()
+# diff <- (stop_time - start_time)
+# diff
 
-stop_time = Sys.time()
-diff <- (stop_time - start_time)
-diff
 
-
-head(data)
-data <- data[complete.cases(data[, "idtrace"]), ]
+# head(data)
+# data <- data[complete.cases(data[, "idtrace"]), ]
 
 ## filter data with speel < 200 km/h
 data <- data %>%
@@ -208,7 +207,7 @@ n_data <- data %>%
 ## left join with "type" and "portata"
 data <- data %>%
     left_join(idterm_vehtype_portata, by = "idterm")
-write.csv(data, "FCD_data_speed.csv")
+write.csv(data, "FCD_data_speed_2019.csv")
 
 ###########################################################################
 ###########################################################################

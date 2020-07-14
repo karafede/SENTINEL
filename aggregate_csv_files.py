@@ -98,16 +98,27 @@ for csv_file in viasat_filenames:
 
 '''
 
+###########################################################
+### ADD a SEQUENTIAL ID to the dataraw table ##############
+###########################################################
+
 ## drop one column
 cur_HAIG.execute("""
-ALTER TABLE "dataraw" DROP "id"
+ALTER TABLE "dataraw" DROP "new_id"
      """)
 conn_HAIG.commit()
 
 
 ## create a consecutive ID for each row
 cur_HAIG.execute("""
-alter table "dataraw" add id serial
+alter table "dataraw" add id serial PRIMARY KEY
+     """)
+conn_HAIG.commit()
+
+
+## create a consecutive ID for each row
+cur_HAIG.execute("""
+alter table "dataraw" add new_id serial PRIMARY KEY
      """)
 conn_HAIG.commit()
 
@@ -190,7 +201,6 @@ CREATE index routecheck_track_idx on public.routecheck_2017("track_ID");
 conn_HAIG.commit()
 
 
-
 cur_HAIG.execute("""
 CREATE index routecheck_2017_lat_idx on public.routecheck_2017(latitude);
 """)
@@ -243,10 +253,9 @@ conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-ALTER TABLE public.routecheck_2019 ALTER COLUMN "idterm" TYPE bigint USING "idterm" ::bigint
+ALTER TABLE public.routecheck_2019 ALTER COLUMN "idterm" TYPE bigint USING "idterm"::bigint
 """)
 conn_HAIG.commit()
-
 
 
 
@@ -261,10 +270,20 @@ CREATE index routecheck_2017_id_idx on public.routecheck_2017("id");
 """)
 conn_HAIG.commit()
 
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_temp_id_idx on public.routecheck_2017_temp("new_id");
+""")
+conn_HAIG.commit()
+
+
 cur_HAIG.execute("""
 CREATE index routecheck_2019_id_idx on public.routecheck_2019("id");
 """)
 conn_HAIG.commit()
+
+
+
 
 
 
@@ -443,6 +462,7 @@ conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
 cur_HAIG = conn_HAIG.cursor()
 
 #### check how many TRIP ID we have #############
+
 # get all ID terminal of Viasat data
 all_VIASAT_TRIP_IDs = pd.read_sql_query(
     ''' SELECT "TRIP_ID" 
@@ -450,6 +470,11 @@ all_VIASAT_TRIP_IDs = pd.read_sql_query(
 
 # make a list of all unique trips
 all_TRIP_IDs = list(all_VIASAT_TRIP_IDs.TRIP_ID.unique())
+### save and treat result in R #####
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_TRIP_IDs_2019.txt", "w") as file:
+    file.write(str(all_TRIP_IDs))
+
+
 
 print(len(all_VIASAT_TRIP_IDs))
 print("trip number:", len(all_TRIP_IDs))
@@ -488,11 +513,22 @@ CREATE index trip_id_match2017_idx on public.mapmatching_2017("TRIP_ID");
 conn_HAIG.commit()
 
 
+## create index on the "idtrace" column
+cur_HAIG.execute("""
+CREATE index trip_idrace_match2017_idx on public.mapmatching_2017("idtrace");
+""")
+conn_HAIG.commit()
+
+
+
 ## DROP columns in mapmatching_2017
 cur_HAIG.execute("""
 ALTER TABLE "mapmatching_2017" DROP "name"
      """)
 conn_HAIG.commit()
+
+pd.read_sql_query('''
+SELECT pg_size_pretty( pg_relation_size('mapmatching_2019') )''', conn_HAIG)
 
 pd.read_sql_query('''
 SELECT pg_size_pretty( pg_relation_size('mapmatching_2017') )''', conn_HAIG)

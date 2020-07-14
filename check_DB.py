@@ -14,6 +14,55 @@ conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
 cur_HAIG = conn_HAIG.cursor()
 
 
+cur_HAIG.execute("""
+ALTER TABLE public.dataraw ALTER COLUMN "id" TYPE bigint USING "id"::bigint
+""")
+conn_HAIG.commit()
+
+
+## create a consecutive ID for each row
+cur_HAIG.execute("""
+alter table "dataraw" add new_id serial PRIMARY KEY
+     """)
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index dataraw_new_id_idx on public.dataraw(new_id);
+""")
+conn_HAIG.commit()
+
+
+
+cur_HAIG.execute("""
+ALTER TABLE public.dataraw ALTER COLUMN "new_id" TYPE bigint USING "new_id"::bigint
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_temp_id_idx on public.routecheck_2017_temp("new_id");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+ALTER TABLE public.routecheck_2017_temp ALTER COLUMN "idterm" TYPE bigint USING "idterm" ::bigint
+""")
+conn_HAIG.commit()
+
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_temp_idterm_idx on public.routecheck_2017_temp("idterm");
+""")
+conn_HAIG.commit()
+
+
+
+
+
+
 ## check the "idterm"
 all_idterm = pd.read_sql_query('''
                     SELECT idterm 
