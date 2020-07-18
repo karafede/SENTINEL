@@ -76,10 +76,7 @@ all_VIASAT_IDterminals = pd.read_sql_query(
 # make a list of all IDterminals (GPS ID of Viasata data) each ID terminal (track) represent a distinct vehicle
 all_ID_TRACKS = list(all_VIASAT_IDterminals.idterm.unique())
 
-# DATE = '2019-04-15'
-# track_ID = '2507511'
-# track_ID = '2400053'
-
+# track_ID = '2400053'  vehtype = '1'
 # all_ID_TRACKS = ['track_ID']
 
 
@@ -123,7 +120,7 @@ def func(arg):
 
     # if len(viasat_data) > 5  and len(viasat_data) < 90:
     if (len(viasat_data) > 5) and sum(viasat_data.progressive)> 0:  # <----
-        fields = ["id", "longitude", "latitude", "progressive", 'panel', 'grade', "timedate", "speed"]
+        fields = ["id", "longitude", "latitude", "progressive", 'panel', 'grade', "timedate", "speed", "vehtype"]
         # viasat = pd.read_csv(viasat_data, usecols=fields)
         viasat = viasat_data[fields]
         ## add a field for "anomalies"
@@ -159,7 +156,7 @@ def func(arg):
             # make difference in totalaseconds from the start of the first trip of each TRACK_ID (need this to compute trips)
             viasat['path_time'] = viasat['totalseconds'] - viasat['totalseconds'][0]
             viasat = viasat[["id", "longitude", "latitude", "progressive", "path_time", "totalseconds",
-                             "panel", "grade", "speed", "hour", "timedate", "anomaly"]]
+                             "panel", "grade", "speed", "hour", "timedate", "vehtype", "anomaly"]]
             viasat['last_totalseconds'] = viasat.totalseconds.shift()   # <-------
             viasat['last_progressive'] = viasat.progressive.shift()  # <-------
             ## set nan values to -1
@@ -224,7 +221,7 @@ def func(arg):
 
 
                         ##############################################
-                        ### get CONCCATENATED TRIPS ##################
+                        ### get CONCATENATED TRIPS ##################
                         ##############################################
 
                         ## get indices where diff_progressive < 0
@@ -403,7 +400,8 @@ def func(arg):
                             # final_TRIPS = final_TRIPS.append(VIASAT_TRIP)
 
                             ### remove columns and add terminal ID
-                            VIASAT_TRIP['track_ID'] = track_ID
+                            # VIASAT_TRIP['track_ID'] = track_ID
+                            VIASAT_TRIP['idterm'] = track_ID
                             VIASAT_TRIP['segment'] = VIASAT_TRIP.index
                             VIASAT_TRIP.drop(['last_panel', 'last_lon', 'last_lat',    # <------
                                               'last_totalseconds', 'last_progressive'], axis=1,

@@ -89,6 +89,7 @@ engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/
 
 all_EDGES = pd.DataFrame([])
 
+
 # ## get all ID terminal of Viasat data
 # all_VIASAT_IDterminals = pd.read_sql_query(
 #     ''' SELECT "idterm"

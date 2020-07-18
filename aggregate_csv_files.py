@@ -69,6 +69,7 @@ viasat_filenames = ['VST_ENEA_SA_FCD_2017.csv',    # 83206797 lines
 
 ## loop over all the .csv file with the raw VIASAT data
 for csv_file in viasat_filenames:
+    print(csv_file)
 # csv_file = viasat_filenames[2]
     file = open(csv_file)
     reader = csv.reader(file)
@@ -284,10 +285,6 @@ conn_HAIG.commit()
 
 
 
-
-
-
-
 viasat_data = pd.read_sql_query('''
               SELECT idterm, vehtype 
               FROM public.dataraw 
@@ -473,7 +470,6 @@ all_TRIP_IDs = list(all_VIASAT_TRIP_IDs.TRIP_ID.unique())
 ### save and treat result in R #####
 with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_TRIP_IDs_2019.txt", "w") as file:
     file.write(str(all_TRIP_IDs))
-
 
 
 print(len(all_VIASAT_TRIP_IDs))
