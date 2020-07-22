@@ -22,7 +22,7 @@ La sezione stradale sull''autostrada **A2**, lungo il tratto **671 (A2, Km 5+004
 
 
 ```{r, echo=FALSE, fig.cap="**Figura 1**.Postazione Tratto dell'autostrada A2 ottenuta da OpenStreetMap. Archi e nodi sono stati individuati in corrispondezna della postazione ANAS  671 (A2, Km 5+004).", out.width = '70%'}
-knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_Salerno.png")
+knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_ANAS.png")
 ```
 
 *<br/><br/>*
@@ -109,7 +109,7 @@ pander(mapmatching_data, emphasize.strong.cols = 1, missing = "")
 I dati Viasat sono caratterizzati dalla presenza di un identificativo anonimo del veicolo **idterm**, di un *orario* (**timedate**),  della distanza progressiva percorsa da ogni veicolo (**progressive**), dal un segnale *on/off* (**panel**) che indica se il motore è acceso o spento. Infine, viene anche riportata l'*accuratezza* del dato GPS (**grade**) il cui valore varia da *1* (piu' accurato) a *50* (meno accurato). 
 I dati Viasat vengono forniti con una *time-zone* UTC e quindi, per confrontarli con i dati ANAS, la serie temporale è stata incrementata di due ore (GMT + 2) in riferimento all'ora legale in vigore in Italia durante il mese di Settembre 2017.
 
-Abbiamo analizzato una serie temporale di FCD Viasat per il periodo 1-18 Settembre 2017. Questo periodo coincide con quello in cui abbiamo a disposizione delle osservazioni di traffico effettuate da ANAS sulla stessa sezione stradale. E' quindi stato possibile fare un confronto. Per il periodo 1-18 Settembre 2018 abbiamo registrato un numero di **`r length(unique(data$idterm))`** veicoli che sono passati sulla sezione in esame dell'autostrada A2. Di questi veicoli, **`r length(unique(data_car$idterm))`** sono stati identificati come **automobili**, mentre **`r length(unique(data_fleet$idterm))`** sono stati identificati come **veicoli pesanti** (**Figura 2**). Quindi i veicoli pesanti rappresentanto circa il **15%** del dataset di dati. 
+Abbiamo analizzato una serie temporale di FCD Viasat per il periodo 31 Agosto-18 Settembre 2017. Questo periodo coincide con quello in cui abbiamo a disposizione delle osservazioni di traffico effettuate da ANAS sulla stessa sezione stradale. E' quindi stato possibile fare un confronto. Per il periodo 31 Agosto-18 Settembre 2017 abbiamo registrato un numero di **`r length(unique(data$idterm))`** veicoli che sono passati sulla sezione in esame dell'autostrada A2. Di questi veicoli, **`r length(unique(data_car$idterm))`** sono stati identificati come **automobili**, mentre **`r length(unique(data_fleet$idterm))`** sono stati identificati come **veicoli pesanti** (**Figura 2**). Quindi i veicoli pesanti rappresentanto circa il **15%** del dataset di dati. 
 
 
 ## 3. Map-matching e conteggio di passaggi
@@ -134,7 +134,7 @@ data$hour <- as.factor((data$hour))
 
 ## resample to 1 hour
 total_counts_direzione_all <- data %>%
-    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, hour) %>%
     summarize(count = length(idterm))
 
 total_counts_direzione <- total_counts_direzione_all %>%
@@ -143,6 +143,16 @@ total_counts_direzione <- total_counts_direzione_all %>%
 
 total_counts_direzione_type <- total_counts_direzione_all %>%
     group_by(direzione, vehtype) %>%
+    summarize(count_VIASAT = sum(count))
+
+
+counts_direzione_all <- data %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, hour) %>%
+    summarize(count = length(idterm))
+
+ALL_counts_direzione <- counts_direzione_all %>%
+    group_by(direzione,
+             hour) %>%
     summarize(count_VIASAT = sum(count))
 
 
@@ -164,7 +174,7 @@ counts_ANAS <- counts_ANAS %>%
   left_join(total_counts_ANAS, by = "direzione")
 counts_ANAS$fraction <- round(((counts_ANAS$conteggi_totali)/counts_ANAS$count_ANAS)*100, digits = 0)
 counts_ANAS <- counts_ANAS %>%
-  select(direzione, classi, conteggi_totali, fraction)
+  dplyr::select(direzione, classi, conteggi_totali, fraction)
 names(counts_ANAS) <- c("direzione", "classi", "passaggi totali ANAS", "frazione %")
 
 
@@ -202,6 +212,78 @@ pander(total_counts_direzione, emphasize.strong.cols = 1, missing = "")
 ```
 
 *<br/><br/>*
+
+
+*<br/><br/>*
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Figura A1**. Andamento orario del coefficiente di penetrazione per i dati VIASAT rispetto ai dati ANAS. I dati sono riferiti ad automobili e mezzi pesanti su  su un tratto dell'autostrada A2 (Salerno-Avellino) tra il 31 Ago ed il 18 Sett. 2017."}
+
+#### get coefficiente di penetrazione (VIASAT-ANAS) by hour 
+
+counts_direzione_all <- data %>%
+    group_by(Date=floor_date(timedate, "1 hour"), direzione, hour) %>%
+    summarize(count = length(idterm))
+
+
+counts_VIASAT_hourly <- counts_direzione_all %>%
+    group_by(direzione,
+             hour) %>%
+    summarize(count_VIASAT = sum(count))
+
+
+## load hourly ANAS counts
+### percentage of veicoli pesanti e auto (ANAS)
+counts_ANAS_hourly <- read.csv("D:/ENEA_CAS_WORK/SENTINEL/ANAS/ALL_passaggi_hourly_ANAS.csv")[-1]
+counts_ANAS_hourly$hour <- as.factor(counts_ANAS_hourly$hour)
+counts_ANAS_hourly$conteggi_totali <- round(counts_ANAS_hourly$conteggi_totali, digits = 0)
+
+
+counts_ANAS_hourly <- counts_ANAS_hourly %>%
+  left_join(counts_VIASAT_hourly, by = c("direzione", "hour"))
+counts_ANAS_hourly$count_VIASAT <- round(counts_ANAS_hourly$count_VIASAT, digits = 0)
+
+counts_ANAS_hourly$fraction <- round(((counts_ANAS_hourly$count_VIASAT)/counts_ANAS_hourly$conteggi_totali)*100, digits = 1)
+
+
+counts_ANAS_hourly$hour <- as.numeric(counts_ANAS_hourly$hour)
+
+#### plot
+
+
+
+p <- ggplot(data = counts_ANAS_hourly,
+              aes(hour, fraction, fill = fraction)) + guides(fill=FALSE) +
+    geom_bar(stat = "identity") + 
+    facet_wrap( ~ direzione, ncol = 4) +  
+    guides(fill=FALSE) +
+    # ylim(0, 1100000) +
+    theme_bw() +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+    theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+    ylab("passaggi VIASAT / ANAS (%)") +            # Set y-axis label
+    xlab(expression(paste(""))) +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=9)) +
+    xlab("") +            # Set y-axis label
+    theme(axis.title.x = element_text(face="bold", colour="black", size=12),
+          axis.text.x  = element_text(angle=0, vjust=0.5, size=12, hjust = 0.5)) + 
+    theme(axis.title.y = element_text(face="bold", colour="black", size=14),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=14)) +
+    scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
+   geom_hline(yintercept=2, color="red", linetype="dashed", size=0.5) +
+   geom_hline(yintercept=3, color="red", linetype="dashed", size=0.5) +
+   geom_hline(yintercept=4, color="red", linetype="dashed", size=0.5) +
+    ggtitle("Coefficiente di penetrazione VIASAT-ANAS (31 Ago.-18 Sett. 2017)") + 
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+  p
+
+
+```
+
+*<br/><br/>*
+
 
 Mentre le osservazioni ANAS sono riferite a conteggi in tempo reale di tutti i veicoli,i dati Viasat rappresentano solo una piccola frazione dei veicoli transitati sulla sezione stradale in esame.  
 Come ripotato in **Tabella 3**, il mumero totale di passaggi di dati Viasat rappresenta circa il **`r penetration`%** dei dati ANAS su entrambe le direzioni di marcia. Questo valore, che chiameremo coefficiente di **penetrazione**, è stato mediato su entrambe le direzioni di marcia e quindi rappresenta una stima aprossimativa della frazione di veicoli registrati dal sistema VIASAT. Ricordiamo che i dati ANAS e i dati VIASAT appartengono alla stessa **famiglia** di autoveicoli che sono transitati sul tratto di autostrada A2 nel periodo in esame. Tuttavia dobbiamo tenere presente che non tutti gli autoveicoli registrati da ANAS sono dotati di un dispositivo satellitare per il rilevamento da parte di VIASAT. Percio', e' piu' corretto identificare i veicoli VIASAT come una **sottofamiglia** di veicoli ANAS. Quindi, assumendo come numero assoluto di veicoli quello riportato da ANAS, applicando il coefficiente di penetrazione ai dati VIASAT dovremmo ottenere un numero di veicoli dello stesso ordine di grandezza di quello osservato per ANAS.
@@ -904,7 +986,7 @@ q
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno)"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno)"}
 
 # data$pois <- dpois(data$speed, lambda = mean(data$speed))
 # data$nbinom <- dnbinom(data$speed, mu = mean(data$speed), size = 1)
@@ -947,7 +1029,7 @@ grid.arrange(plots$auto, plots$`veicoli pesanti`, nrow=1, ncol = 2,
 
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5b.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Avellino)"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6a.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Avellino)"}
 
 # data$pois <- dpois(data$speed, lambda = mean(data$speed))
 # data$nbinom <- dnbinom(data$speed, mu = mean(data$speed), size = 1)
@@ -1033,12 +1115,12 @@ pander(car_fleets, emphasize.strong.cols = 1, missing = "")
 
 ## 4. Distribuzione delle velocità
 
-La distribuzione delle velocità istantanee dei veicoli è rappresentata in **Figura 5**. Per entrambe le tipologie di veicoli (automobili e veicoli pesanti) si è cercato di modelizzare le distribuzioni con una curva Gaussiana. Come riportato nella **Tabella 3**, il valore medio per la distribuzione delle velocità delle automobili è stato stimato a **`r car_fleets$velocità[1]` km/h** con una deviazione standard di **`r car_fleets$velocità[2]` km/h**. Invece, per i veicoli pesanti, il valore medio per la distribuzione delle velocità è stato stimato a **`r car_fleets$velocità[3]` km/h** con una deviazione standard di **`r car_fleets$velocità[4]` km/h**. 
+La distribuzione delle velocità istantanee delle auto e dei veicoli pesanti è rappresentata in **Figura 6 e Figura 6a**. Per entrambe le tipologie di veicoli (automobili e veicoli pesanti) si è cercato di modelizzare le distribuzioni con una curva Gaussiana. Come riportato nella **Tabella 3**, il valore medio per la distribuzione delle velocità delle automobili è stato stimato a **`r car_fleets$velocità[1]` km/h** con una deviazione standard di **`r car_fleets$velocità[2]` km/h**. Invece, per i veicoli pesanti, il valore medio per la distribuzione delle velocità è stato stimato a **`r car_fleets$velocità[3]` km/h** con una deviazione standard di **`r car_fleets$velocità[4]` km/h**. 
 
 
 *<br/><br/>*
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6.** Distribuzione delle velocità di tutti i veicoli ottenuta dal confronto di dati ANAS e FCD (Viasat) per il periodo 31 Ago.-18 Sett. 2017"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Distribuzione delle velocità di tutti i veicoli ottenuta dal confronto di dati ANAS e FCD (Viasat) per il periodo 31 Ago.-18 Sett. 2017"}
 
 
 
@@ -1140,7 +1222,7 @@ pander(all_fits, emphasize.strong.cols = 1, missing = "")
 ````
 
 
-Il confronto sulla distribuzione di velocità tra i dati di traffico Viasat e ANAS è stato fatto su tutti i veicoli senza distinzione tra automobili e veicoli pesanti. Come mostrato in **Figura 6** e **Tabella 3a** la modelizzazione delle velocità con una curva gaussiana ha mostrato che i dati ANAS hanno una deviazione standard **`r all_fits$velocità[2]` km/h**  inferiore di quella modellizzata per i dati Viasat **`r all_fits$velocità[4]`km/h**. Inoltre la velocità media modelizzata con i dati ANAS è risultata essere di **`r all_fits$velocità[1]`  km/h** mentre quella modelizzata con i dati Viasat è stata stimata essere **`r all_fits$velocità[3]`km/h**.
+Il confronto sulla distribuzione di velocità tra i dati di traffico Viasat e ANAS è stato fatto su tutti i veicoli senza distinzione tra automobili e veicoli pesanti. Come mostrato in **Figura 7** e **Tabella 3a** la modelizzazione delle velocità con una curva gaussiana ha mostrato che i dati ANAS hanno una deviazione standard **`r all_fits$velocità[2]` km/h**  inferiore di quella modellizzata per i dati Viasat **`r all_fits$velocità[4]`km/h**. Inoltre la velocità media modelizzata con i dati ANAS è risultata essere di **`r all_fits$velocità[1]`  km/h** mentre quella modelizzata con i dati Viasat è stata stimata essere **`r all_fits$velocità[3]`km/h**.
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella XXX. t-test per il confronto tra le distribuzioni di velocità ANAS e VIASAT (31 Ago.-18 Sett. 2017; Salerno-Avellino).**"}
@@ -1164,7 +1246,7 @@ pvalue <- t_test$p.value
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Box-plots che mostrano il confronto tra le distribuzioni di velocità ANAS e VIASAT (31 Ago.-18 Sett. 2017; Salerno-Avellino)."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8.** Box-plots che mostrano il confronto tra le distribuzioni di velocità ANAS e VIASAT (31 Ago.-18 Sett. 2017; Salerno-Avellino)."}
 
 ## Wilcoxon-Manney test
 
@@ -1218,14 +1300,14 @@ w_value <- w_test$statistic
 ## Confronto tra dati ANAS e VIASAT
 ### a) t-test
 
-I box-plots riportati in **Figura 7** mostrano che i dati VIASAT hanno una variabilita' piu' grande rispetto ai dati ANAS. Inoltre, I dati VIASAT presentano molti valori estremi ed anche un maggior numero di *outliers* riseptto ai dati ANAS. Malgrado queste differenze, gli interquartili delle due distribuzioni sono molto simili.
+I box-plots riportati in **Figura 8** mostrano che i dati VIASAT hanno una variabilita' piu' grande rispetto ai dati ANAS. Inoltre, I dati VIASAT presentano molti valori estremi ed anche un maggior numero di *outliers* riseptto ai dati ANAS. Malgrado queste differenze, gli interquartili delle due distribuzioni sono molto simili.
 Il *t-test* confronta la differenza osservata fra le medie delle due distribuzioni (ANAS e VIASAT). Se la differenza è maggiore di 0, allora si puo' parlare di indipendenza statistica tra le due distribuzioni.
 Poichè la differenza fra le medie è **`r tvalue` km/h**, l’ipotesi nulla è quindi da scartare e la differenza tra le distribuzioni è compresa fra −7.0 e 8.4 km/h (l’ipotesi nulla è che la differenza sia uguale 0). Inoltre la probabilità di ottenere risultati uguali o meno probabili di quello osservato durante il test, cioe' il **p value** è < 0.05 e quindi i dati osservati sono statisticamente significativi.
 
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8** Kolmogorov-Smirnov test per il confronto tra le distribuzioni di velocità ANAS e VIASAT (31 Ago.-18 Sett. 2017; Salerno-Avellino)."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9** Kolmogorov-Smirnov test per il confronto tra le distribuzioni di velocità ANAS e VIASAT (31 Ago.-18 Sett. 2017; Salerno-Avellino)."}
 
 
 #####################################################
@@ -1267,7 +1349,7 @@ p_value <- KS_test$p.value
 
 ### b) Kolmogorov–Smirnov test
 
-Il test di Kolmogorov–Smirnov (K-S test) è un test non parametrico per il confronto di due distribuzioni indipendenti. Questo test quantifica la distanza massima tra le due distribuzioni cumulative dei campioni di dati in esame (Viasat e ANAS). Per stimare questa distanza, abbiamo calcolato la *cumulative distribution function (CDF)* che è la derivata della distribuzione riporta in Figura 6. Questa funzione mostra chiarmente che 50% delle velocita' ANAS e VIASAT sono inferiori a 92 km/h e 85 km/h, rispettivamente.
+Il test di Kolmogorov–Smirnov (K-S test) è un test non parametrico per il confronto di due distribuzioni indipendenti. Questo test quantifica la distanza massima tra le due distribuzioni cumulative dei campioni di dati in esame (Viasat e ANAS). Per stimare questa distanza, abbiamo calcolato la *cumulative distribution function (CDF)* che è la derivata della distribuzione riporta in Figura 7. Questa funzione mostra chiarmente che 50% delle velocita' ANAS e VIASAT sono inferiori a 92 km/h e 85 km/h, rispettivamente.
 Il K-S test eseguito sulle due distribuzioni di dati ANAS e VIASAT è risultato in una differenza di **`r KS_value`** che significa che le due distribuzioni differiscono di circa il **`r perc_KS_value` %**.
 
 
@@ -1399,7 +1481,7 @@ Il test di Wilcoxon e il test di Mann-Whitney (anche noto come test U di Mann-Wh
 
 ## Stati del traffico (Livelli di Servizio LOS)
 
-Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale in esame, e' stata stimata per ogni ora del giorno. Il rapporto tra il flusso orario e la velocità è risultato nella stima della densità che è rappresentata in **Figura 9**.  
+Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale in esame, e' stata stimata per ogni ora del giorno. Il rapporto tra il flusso orario e la velocità è risultato nella stima della **densità spaziale** che è rappresentata in **Figura 9**.  
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** Flusso per ora della giornata su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno-Avellino)."}
@@ -1575,28 +1657,12 @@ p <- ggplot(data = density_by_day,
 ````
 
 *<br/><br/>*
-Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per la sezione autostradale in esame, i livelli di servizio (Level of Service - LOS) o stati del traffico per ogni ora della giornata sono stati stimati usando la densita' veicolare. I livelli di servizio sono definiti come la misura della prestazione della strada nello smaltire il traffico. Per convenzione, i livelli di servizio  sono 6: da LOS “A” a LOS “F”. I LOS da “A” a “D” hanno una densità inferiore a quello corrispondente alla capacità. Il LOS E corrisponde alla densità critica
+Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per la sezione autostradale in esame, i livelli di servizio (Level of Service - LOS) o stati del traffico per ogni ora della giornata sono stati stimati usando la densita' veicolare (**Figura 9**). I livelli di servizio sono definiti come la misura della prestazione della strada nello smaltire il traffico. Per convenzione, i livelli di servizio  sono 6: da LOS “A” a LOS “F”. I LOS da “A” a “D” hanno una densità inferiore a quello corrispondente alla capacità. Il LOS "E" corrisponde alla densità critica
 e quindi alla capacità della strada. Il LOS “F” ha densità maggiori e quindi siamo in presenza di flusso instabile.
-Come mostrato in **Figura 10**, durante le ore della giornata sulla sezione stradale in esame abbiamo stimato quattro tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **B** (**flusso libero**: circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo è stato osservato durante la maggior parte delle ore della giornata ad eccezzione delle ore **11:00-20:00-21:00** dove è stato stimato un LOS **c**, 3) il LOS **C** (**flusso stabile**) indica che ci sono i primi vincoli alla circolazione con conseguente riduzione della e quindi con del comfort di guida. 4) il LOS **D** (**flusso instabile**) indica che ci sono vincoli alla circolazione, basso comfort ed il flusso che può iniziare ad essere instabile.
+Come mostrato in **Figura 10**, durante le ore della giornata sulla sezione stradale in esame abbiamo stimato quattro tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **B** (**flusso libero**: circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo è stato osservato solo durante alcune ore della giornata (verso le **09:00 - 10:00**). La maggior parte delle ore della giornata sono state caratterizzate da un flusso di tipo 3) **C** (**flusso stabile**) ad eccezzione delle ore **11:00-20:00-21:00** dove è stato osservato un LOS 4) **D** (**flusso inizialmente instabile**). Il flusso **D** indica che ci sono i primi vincoli alla circolazione con conseguente riduzione della e quindi con del comfort di guida.
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 10.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, mentre la lettera **C** indica un stato **STABILE**. Per il calcolo del flusso orario, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
-
-
-# i = 31
-# 
-# time_at_mean_speed = as.vector(density_by_day$perc_time_spent_foll)
-# max_speed = density_by_day$max_speed
-# mean_speed = density_by_day$mean_speed
-# density = density_by_day$density
-# flux = density_by_day$flux
-# 
-# 
-# time_at_mean_speed <- time_at_mean_speed[i]
-# max_speed<- max_speed[i]
-# mean_speed <- mean_speed[i]
-# density <- density[i]
-# flux <- flux[i]
 
 
 ### function to estimate the traffic states (LOS - Level of Service)
@@ -1655,9 +1721,13 @@ traffic_states_fun <- function(density){
 
    else if ((density < 16) & (density > 11))
     LOS = "C"
-
    else if ((density < 22) & (density > 16))  
        LOS = "D"
+     else if ((density <= 28) & (density > 22))  
+       LOS = "E"
+     else if ((density >28))  
+       LOS = "F"
+
 
   else LOS = NA
 

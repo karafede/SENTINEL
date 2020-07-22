@@ -130,6 +130,9 @@ dbListFields(conn_HAIG, "OSM_edges")
 # diff
 
 
+###################################################
+### load MAP-MATCHING data from DB ################
+###################################################
 ### or just using dataraw.... #####################
 
 start_time = Sys.time()
@@ -138,14 +141,14 @@ data =  dbGetQuery(conn_HAIG, "
                      WITH path AS(SELECT 
                             split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
                             u, v,
-                            timedate, mean_speed, idtrace
+                            timedate, mean_speed, idtrace, sequenza
                             FROM mapmatching_2019
                            WHERE (u, v) in (VALUES (32048592, 246509515),
                            (246509515, 1110091820),
                             (1110091823,25844069), (25844069, 25844113))
                                 )
                              SELECT path.idterm, path.u, path.v, path.timedate,
-                                    path.mean_speed,
+                                    path.mean_speed, path.sequenza,
                                     \"OSM_edges\".length,
                                     \"OSM_edges\".highway,
                                     \"OSM_edges\".name,
@@ -161,11 +164,51 @@ stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
+## left join with "type" and "portata"
+data <- data %>%
+    left_join(idterm_vehtype_portata, by = "idterm")
 
 write.csv(data, "FCD_data_speed_2019.csv")
 
 min(data$timedate)
 max(data$timedate)
+
+############################################################################################
+### tratto stradale in corrispodenza della PIASTRA UNIverista' SAlerno #####################
+############################################################################################
+
+## (25844050, 1110091861) <-- Salerno
+## (1110091904, 3371747395)  --> Avellino
+
+
+
+start_time = Sys.time()
+
+data_UNISA =  dbGetQuery(conn_HAIG, "
+                     WITH path AS(SELECT 
+                            split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
+                            u, v,
+                            timedate, mean_speed, idtrace, sequenza
+                            FROM mapmatching_2019
+                           WHERE (u, v) in (VALUES (25844050, 1110091861),
+                           (1110091904, 3371747395))
+                                )
+                             SELECT path.idterm, path.u, path.v, path.timedate,
+                                    path.mean_speed, path.sequenza,
+                                    \"OSM_edges\".length,
+                                    \"OSM_edges\".highway,
+                                    \"OSM_edges\".name,
+                                    \"OSM_edges\".ref,
+                                    dataraw.speed,
+                                    dataraw.id
+                        FROM path
+                            LEFT JOIN dataraw ON path.idtrace = dataraw.id
+                            LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
+                                ")
+
+stop_time = Sys.time()
+diff <- (stop_time - start_time)
+diff
 
 
 # start_time = Sys.time()
@@ -191,26 +234,109 @@ max(data$timedate)
 # data <- data[complete.cases(data[, "idtrace"]), ]
 
 ## filter data with speel < 200 km/h
-data <- data %>%
+data_UNISA <- data_UNISA %>%
     filter(mean_speed < 200)
 
-n_data <- data %>%
+n_data <- data_UNISA %>%
     group_by(u,v) %>%
-    summarise(AVG_speed = mean(mean_speed, na.rm=T),
-              instant_speed = mean(speed, na.rm=T))
+    summarise(MEDIAN_speed = median(mean_speed, na.rm=T),
+              MEDIAN_instant_speed = median(speed, na.rm=T))
 
-# WHERE (u, v) in (VALUES (25844045, 25844050), (25844050, 1110091861), (1110091861, 1868714795),
-#                  (1110091919, 1110091904), (1110091904,3371747395), (3371747395, 31396695))
 
-# (32048592, 246509515), (246509515, 1110091820)
 
 ## left join with "type" and "portata"
-data <- data %>%
+data_UNISA <- data_UNISA %>%
     left_join(idterm_vehtype_portata, by = "idterm")
-write.csv(data, "FCD_data_speed_2019.csv")
+write.csv(data_UNISA, "FCD_2017_UNISA_2019.csv")
+
+
+# data_UNISA$direzione <- as.factor(data_UNISA$u)
+# data_UNISA$direzione <- gsub("25844050", "--> Salerno", (data_UNISA$direzione))
+# data_UNISA$direzione <- gsub("1110091904", "<-- Avellino", (data_UNISA$direzione))
+# 
+# 
+# idterms_salerno <- data_UNISA %>%
+#     filter(direzione == "--> Salerno") 
+# 
+# idterms_avellino <- data_UNISA %>%
+#     filter(direzione == "<-- Avellino")
+# 
+# idterms_salerno <- (unique(idterms_salerno$idterm))
+# idterms_avellino <- (unique(idterms_avellino$idterm))
+
+
+
+# start_time = Sys.time()
+# prova =  dbGetQuery(conn_HAIG, " 
+#                             WITH path AS(SELECT 
+#                             u, v,
+#                             timedate, mean_speed, idtrace, sequenza
+#                             FROM mapmatching_2019
+#                             WHERE date(timedate) = '2019-09-02')
+#                           SELECT  path.u, path.v,
+#                                   dataraw.idterm
+#                            FROM path
+#                             LEFT JOIN dataraw 
+#                             ON path.idtrace = dataraw.id
+#                             WHERE dataraw.idterm::bigint = 4198677
+#                             ")
+# stop_time = Sys.time()
+# diff <- (stop_time - start_time)
+# diff
+
+
+
+
+start_time = Sys.time()
+prova =  dbGetQuery(conn_HAIG, " 
+                            WITH path AS(SELECT
+                            u, v,
+                            timedate, mean_speed, idtrace, sequenza
+                            FROM mapmatching_2019
+                            WHERE date(timedate) = '2019-09-02')
+                          SELECT  path.u, path.v, path.timedate, path.mean_speed,
+                                  dataraw.idterm, 
+                                  \"OSM_edges\".length,
+                                    \"OSM_edges\".highway
+                           FROM path
+                            LEFT JOIN dataraw 
+                                   ON path.idtrace = dataraw.id
+                          LEFT JOIN \"OSM_edges\" 
+                                    ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
+                            ")
+stop_time = Sys.time()
+diff <- (stop_time - start_time)
+diff
+
+
+
+start_time = Sys.time()
+prova =  dbGetQuery(conn_HAIG, " 
+                           SELECT  
+                       mapmatching_2019.u, mapmatching_2019.v,
+                            mapmatching_2019.timedate, mapmatching_2019.mean_speed, 
+                            mapmatching_2019.idtrace,
+                            dataraw.idterm
+                        from mapmatching_2019
+                        LEFT JOIN dataraw 
+                                   ON mapmatching_2019.idtrace = dataraw.id  
+                        WHERE date(mapmatching_2019.timedate) = '2019-09-02' 
+                            ")
+stop_time = Sys.time()
+diff <- (stop_time - start_time)
+diff
+
+
+
+# write.csv(prova, "flow_mapmatching_A2_salerno_2019.csv")
+
+
+
 
 ###########################################################################
 ###########################################################################
+###########################################################################
+######### Distribution of SPEED ###########################################
 ###########################################################################
 
 data <- read.csv(paste0("FCD_data_speed.csv"),
@@ -289,8 +415,6 @@ total_counts_edges <- data %>%
     group_by(u,v) %>%
     summarize(instant_speed=mean(speed),
               count = length(idterm))
-
-
 
 
 
@@ -427,8 +551,8 @@ stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
-#######################################################################
-#######################################################################
+###########################################################################
+###########################################################################
 ###########################################################################
 #### very important to check...JOIN dataraw with routecheck by "new_id" ###
 ###########################################################################

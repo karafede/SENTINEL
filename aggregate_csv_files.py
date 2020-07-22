@@ -117,6 +117,12 @@ alter table "dataraw" add id serial PRIMARY KEY
 conn_HAIG.commit()
 
 
+cur_HAIG.execute("""
+ALTER TABLE public.dataraw ALTER COLUMN "id" TYPE bigint USING "id"::bigint
+""")
+conn_HAIG.commit()
+
+
 ## create a consecutive ID for each row
 cur_HAIG.execute("""
 alter table "dataraw" add new_id serial PRIMARY KEY
@@ -495,6 +501,10 @@ with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019_new.txt", "w
 ### check the size of a table ########
 ######################################
 
+################
+### 2017 #######
+################
+
 ## create index on the column (u,v) togethers in the table 'mapmatching_2017' ###
 cur_HAIG.execute("""
 CREATE INDEX UV_idx ON public.mapmatching_2017(u,v);
@@ -514,6 +524,37 @@ cur_HAIG.execute("""
 CREATE index trip_idrace_match2017_idx on public.mapmatching_2017("idtrace");
 """)
 conn_HAIG.commit()
+
+################
+### 2019 #######
+################
+
+## create index on the column (u,v) togethers in the table 'mapmatching_2017' ###
+cur_HAIG.execute("""
+CREATE INDEX UV_idx_2019 ON public.mapmatching_2019(u,v);
+""")
+conn_HAIG.commit()
+
+
+## create index on the "TRIP_ID" column
+cur_HAIG.execute("""
+CREATE index trip_id_match2019_idx on public.mapmatching_2019("TRIP_ID");
+""")
+conn_HAIG.commit()
+
+
+## create index on the "idtrace" column
+cur_HAIG.execute("""
+CREATE index trip_idrace_match2019_idx on public.mapmatching_2019("idtrace");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index mapmatching_2019_timedate_idx on public.mapmatching_2019(timedate);
+""")
+conn_HAIG.commit()
+
 
 
 

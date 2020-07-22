@@ -82,20 +82,23 @@ def wkb_hexer(line):
 # Create an SQL connection engine to the output DB
 engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/HAIG_Viasat_SA')
 
-# # get all ID terminal of Viasat data
+# ## get all ID terminal of Viasat data
 # all_VIASAT_IDterminals = pd.read_sql_query(
 #     ''' SELECT "idterm"
-#         FROM public.routecheck_2017''', conn_HAIG)
-#
-# # make a list of all IDterminals (GPS ID of Viasata data) each ID terminal (track) represent a distinct vehicle
+#         FROM public.routecheck_2019''', conn_HAIG)
+# ## make a list of all IDterminals (GPS ID of Viasata data) each ID terminal (track) represent a distinct vehicle
 # all_ID_TRACKS = list(all_VIASAT_IDterminals.idterm.unique())
-# all_ID_TRACKS = [int(i) for i in all_ID_TRACKS]
+# ## all_ID_TRACKS = [int(i) for i in all_ID_TRACKS]
+# ## save 'all_ID_TRACKS' as list
+# with open("all_ID_TRACKS_2019.txt", "w") as file:
+#     file.write(str(all_ID_TRACKS))
 
 ## reload 'all_ID_TRACKS' as list
 # with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019.txt", "r") as file:
 #     all_ID_TRACKS = eval(file.readline())
 with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019_new.txt", "r") as file:
     all_ID_TRACKS = eval(file.readline())
+
 
 # ### get all terminals corresponding to 'fleet'
 # viasat_fleet = pd.read_sql_query('''
@@ -104,6 +107,10 @@ with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019_new.txt", "r
 #               WHERE vehtype = '2' ''', conn_HAIG)
 # # make an unique list
 # idterms_fleet = list(viasat_fleet.idterm.unique())
+# ## save 'all_ID_TRACKS' as list
+# with open("idterms_fleet.txt", "w") as file:
+#     file.write(str(idterms_fleet))
+
 
 ## reload 'idterms_fleet' as list
 with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/idterms_fleet.txt", "r") as file:
@@ -839,7 +846,7 @@ def func(arg):
 
 if __name__ == '__main__':
     # pool = mp.Pool(processes=mp.cpu_count()) ## use all available processors
-    pool = mp.Pool(processes=58)     ## use 60 processors
+    pool = mp.Pool(processes=60)     ## use 60 processors
     print("++++++++++++++++ POOL +++++++++++++++++", pool)
     results = pool.map(func, [(last_track_idx, track_ID) for last_track_idx, track_ID in enumerate(all_ID_TRACKS)])
     pool.close()
