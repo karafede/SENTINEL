@@ -4,10 +4,10 @@ author:
 - Federico Karagulian
 date: "ultima versione `r format(Sys.time(), '%d %B %Y, %H:%M')`"
 output:
+  html_document: default
+  pdf_document: default
   word_document: 
     reference_docx: word_style_FK.docx
-  pdf_document: default
-  html_document: default
   number_sections: true
   bookdown::word_document: default
 ---
@@ -251,7 +251,7 @@ q <- ggplot(data = total_counts_direzione_type,
   geom_bar(stat = "identity", position = position_stack()) +
   scale_x_discrete(limits = categories) +
   geom_text_repel(aes(label=paste0(`frazione %`, "%")), vjust=1, color="black",
-            position = position_stack(0.8), size=5) +
+            position = position_stack(0.4), size=5) +
   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
   theme(axis.title.x = element_blank()) +
   ylab(expression(paste("numero di passaggi"))) +
@@ -366,6 +366,9 @@ categories <- as.character( unique(VIASAT_STATS_passaggi_daily$vehtype))
 ### plot passaggi by % pecentage and by DAY #####
 ###################################################
 
+## correct percentages
+VIASAT_STATS_passaggi_daily$norm_conteggi[VIASAT_STATS_passaggi_daily$vehtype == "veicoli pesanti"] <-  rev(100 - VIASAT_STATS_passaggi_daily$norm_conteggi[VIASAT_STATS_passaggi_daily$vehtype == "auto"])
+
 
 p <- ggplot(data = VIASAT_STATS_passaggi_daily,
               aes(day, conteggi_per_tipo, fill = day)) + guides(fill=FALSE) +
@@ -442,7 +445,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     # facet_wrap( ~ vehtype, ncol = 4) +  
     facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    # ylim(0, 1100000) +
+    ylim(0,90) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -517,7 +520,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     # facet_wrap( ~ vehtype, ncol = 4) +  
     facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    # ylim(0, 1100000) +
+    ylim(0, 90) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -560,6 +563,7 @@ portata_veh <- data %>%
 ## skip NA values
 portata_veh <- portata_veh[!is.na(portata_veh["portata"]),]
 
+portata_raw <- portata_veh
 
 ## resample to 1 hour and group by portata
 portata_veh <- portata_veh %>%
@@ -626,6 +630,7 @@ superamenti <- portata_veh %>%
 min_portata <- min(portata_veh$portata)
 max_portata <- max(portata_veh$portata)
 
+
 portata_veh <- portata_veh %>%
   group_by(portata,
            direzione) %>%
@@ -648,7 +653,7 @@ portata_veh <- portata_veh %>%
 # portata_veh$percentage <- round(((portata_veh$conteggi)/(all_portata_veh$total))*100, digits = 1)
 
 
-q <- ggplot(data = portata_veh, 
+p <- ggplot(data = portata_veh, 
             aes(portata, conteggi, fill = portata)) +
   theme_bw() +
   geom_line(alpha=1, col="red", size = 1, linetype="dashed") +
@@ -658,8 +663,8 @@ q <- ggplot(data = portata_veh,
   geom_point(alpha=1, col="black", size = 1) +
   facet_wrap( ~ direzione, ncol = 4) +
   guides(fill=FALSE) +
-  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=10)) +
-  theme(axis.text.x=element_text(size=10, colour = "black")) +
+  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13, colour = "black")) +
   theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
   # theme(axis.title.x = element_blank()) +  
   xlab("portata (kg)") +
@@ -670,7 +675,100 @@ q <- ggplot(data = portata_veh,
         axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
   ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
-q
+# q
+
+
+
+
+#### histograms
+
+q <- ggplot(data = portata_raw, 
+            aes(portata, fill = direzione)) +
+  theme_bw() +
+   geom_histogram(bins = 50) +
+ facet_wrap( ~ direzione, ncol = 2) +
+   theme( strip.text = element_text(size = 13)) +
+  guides(fill=FALSE) +
+  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13, colour = "black")) +
+  theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+  xlab("portata (kg)") +
+  ylab("conteggi") +   
+   geom_text(aes(x = 13000 , y = 700 , label = "18000"), size = 5) +
+   geom_text(aes(x = 6200 , y = 250 , label = "3500"), size = 5) +
+    geom_text(aes(x = 29000 , y = 220 , label = "26000"), size = 5) +
+   theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+# q
+
+
+# library(scales) 
+# 
+# ### get values from geom_density()
+# m <- ggplot(portata_raw, aes(x = portata))
+# m <- m + geom_density()
+# p <- ggplot_build(m)  
+# max_density <- max(p$data[[1]]$density)
+# max_percentage <- 100
+# data_dens <- p$data[[1]]
+
+  
+# q <- ggplot(data = data_dens, 
+#             aes(x, ndensity)) +
+#   theme_bw() +
+#   geom_line(alpha=1, col="red", size = 1, linetype="dashed") +
+#   stat_peaks(colour = "red", span = 21, ignore_threshold = 0.5) +
+#   stat_peaks(geom = "text", colour = "blue", vjust = -0.5, size = 4, x.label.fmt = "%04d",
+#              span = 5, ignore_threshold = 0.05) +
+#   geom_point(alpha=1, col="black", size = 1) +
+#   # facet_wrap( ~ direzione, ncol = 4) +
+#   guides(fill=FALSE) +
+#   theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=10)) +
+#   theme(axis.text.x=element_text(size=10, colour = "black")) +
+#   theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+#   # theme(axis.title.x = element_blank()) +  
+#   xlab("portata (kg)") +
+#   ylab("conteggi") +   
+#      # geom_text(aes(label = paste(percentage, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
+#  # ylim(0, 1200) +
+#    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+#         axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+#   ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
+#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+# q
+
+  
+
+# breaks_density <- seq(0, max_density, by = 0.00001)
+# breaks_perc <- round((breaks_density*max_percentage)/max_density, digits = 0)
+# 
+# 
+# p <- ggplot(portata_raw, aes(x=portata)) +
+#   geom_density(position="identity") +
+#   scale_y_continuous(breaks = breaks_density,
+#        labels = c(paste0(breaks_perc, "%")) ) +
+#   facet_wrap( ~ direzione, ncol = 4) +
+#     theme_bw() +
+#     guides(fill=FALSE) +
+#     theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=10)) +
+#     theme(axis.text.x=element_text(size=10, colour = "black")) +
+#     theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+#     # theme(axis.title.x = element_blank()) +  
+#     xlab("portata (kg)") +
+#     ylab("conteggi") +   
+#      # geom_vline(xintercept = 3500, col="red", lty=1, size=1) +
+#      geom_text(aes(x = 3000 , y = 0.00007 , label = "3500"), size = 4) +
+#      # geom_vline(xintercept = 18000, col="blue", lty=1, size=1) +
+#      geom_text(aes(x = 15000 , y = 0.0001 , label = "18000"), size = 4) +
+#      theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+#           axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+#     ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
+#     theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+# p
+
+
 
 
 ### get only vehicles with percetnage >1%
@@ -689,6 +787,8 @@ AAA <- portata_veh %>%
 portata_veh <- portata_veh %>%
   group_by(direzione) %>%
   mutate(portata = factor(portata, levels = portata[order(conteggi)]))
+
+q
 
 
 

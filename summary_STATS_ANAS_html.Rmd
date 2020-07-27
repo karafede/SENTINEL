@@ -437,6 +437,83 @@ passaggi$classi <- as.factor(passaggi$classi)
 # make classe "articolati" as classe "Autotreni"
 levels(passaggi$classi) <- gsub("passaggi_totali_articolati","passaggi_totali_autotreni", levels(passaggi$classi))
 
+##################################################
+##################################################
+#### dati grezzi #################################
+##################################################
+##################################################
+
+
+# add corsia and direzione
+DB_passaggi_grezzi <- cbind(DB_passaggi,  DB$date)
+names(DB_passaggi_grezzi) <- c(all_passaggi, "corsia", "direzione", "datetime")
+
+# transpose data
+passaggi_grezzi <- gather(DB_passaggi_grezzi, "classi", "records", 1:(length(all_passaggi)-2)) # keep out "day" and "hour"
+passaggi_grezzi$records <- as.numeric(passaggi_grezzi$records)
+passaggi_grezzi$classi <- as.factor(passaggi_grezzi$classi)
+# make classe "articolati" as classe "Autotreni"
+levels(passaggi_grezzi$classi) <- gsub("passaggi_totali_articolati","passaggi_totali_autotreni", levels(passaggi_grezzi$classi))
+
+
+# change "passaggi with "N
+passaggi_grezzi$classi <- gsub("passaggi_totali","N", (passaggi_grezzi$classi))
+passaggi_grezzi$classi <- gsub("classe_di_velocita_","", (passaggi_grezzi$classi))
+passaggi_grezzi$classi <- gsub("__","_", (passaggi_grezzi$classi))
+passaggi_grezzi$direzione <- gsub("A","--> Salerno", (passaggi_grezzi$direzione))
+passaggi_grezzi$direzione <- gsub("D","<-- Avellino", (passaggi_grezzi$direzione))
+
+to_keep <- as.vector( passaggi_grezzi$classi[-grep(pattern  = "\\_km_h\\b", x = passaggi_grezzi$classi)])
+
+# remove not neccessary informations for the counts (conteggi totali)
+# only keep the "conteggi" by classe
+
+passaggi_grezzi <- passaggi_grezzi %>%
+   filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_autobus", "N_moto")) %>%
+  filter(classi %in% to_keep)
+
+# remove rows with 0 values
+passaggi_grezzi$classi <- gsub("N_","", (passaggi_grezzi$classi))
+passaggi_grezzi$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (passaggi_grezzi$classi))
+passaggi_grezzi$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (passaggi_grezzi$classi))
+
+passaggi_grezzi <- as.data.frame(passaggi_grezzi)
+passaggi_grezzi$classi <- as.character(passaggi_grezzi$classi)
+
+
+################
+#### auto ######
+################
+passaggi_grezzi_auto <- passaggi_grezzi %>%
+  group_by(direzione,
+           datetime) %>%
+  filter(classi == "auto") %>%
+    summarize(somma = sum(records))
+passaggi_grezzi_auto$classi <- "auto"
+
+
+passaggi_grezzi_pesanti <- passaggi_grezzi %>%
+  group_by(direzione,
+           datetime) %>%
+  filter(classi %in% c( "autotreni" , "furgoni" , "articolati", "camion > 7.5m",
+  "camion < 7.5m")) %>%
+  summarize(somma = sum(records))
+passaggi_grezzi_pesanti$classi <- "veicoli pesanti"
+
+names(passaggi_grezzi_pesanti) <- c("direzione", "Date",  "count", "vehtype")
+names(passaggi_grezzi_auto) <- c("direzione", "Date",  "count", "vehtype")
+
+passaggi_grezzi_ANAS <- rbind(passaggi_grezzi_auto,
+                              passaggi_grezzi_pesanti)
+
+write.csv(passaggi_grezzi_ANAS, "passaggi_grezzi_ANAS.csv")
+
+
+##################################################
+##################################################
+##################################################
+##################################################
+
 
 # somma di tutti i tipi di conteggi per i passaggi di veicoli
 STATS_passaggi_daily <- passaggi %>%
@@ -759,6 +836,100 @@ p <- ggplot(data = STATS_passaggi_hourly_SALERNO,
 
 
 
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4e.** Numero di passaggi orari per giorni feriali e per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004) nella direzione verso Salerno."}
+
+################################
+### summary stats by hour ######
+################################
+
+
+############################################################
+############################################################
+
+
+ALL_passaggi_hourly <- passaggi %>%
+  # filter(!day %in% c("sab", "dom")) %>%
+  group_by(# corsia,
+           direzione,
+           classi,
+           hour) %>%
+  summarise(conteggi_totali = sum(records, na.rm = TRUE))
+
+
+
+ALL_passaggi_hourly$classi <- as.factor(ALL_passaggi_hourly$classi)
+# change "passaggi with "N
+ALL_passaggi_hourly$classi <- gsub("passaggi_totali","N", (ALL_passaggi_hourly$classi))
+ALL_passaggi_hourly$classi <- gsub("classe_di_velocita_","", (ALL_passaggi_hourly$classi))
+ALL_passaggi_hourly$classi <- gsub("__","_", (ALL_passaggi_hourly$classi))
+ALL_passaggi_hourly$direzione <- gsub("A","--> Salerno", (ALL_passaggi_hourly$direzione))
+ALL_passaggi_hourly$direzione <- gsub("D","<-- Avellino", (ALL_passaggi_hourly$direzione))
+
+to_keep <- as.vector( ALL_passaggi_hourly$classi[-grep(pattern  = "\\_km_h\\b", x = ALL_passaggi_hourly$classi)])
+
+# remove not neccessary informations for the counts (conteggi totali)
+# only keep the "conteggi" by classe
+
+ALL_passaggi_hourly <- ALL_passaggi_hourly %>%
+   filter(!classi %in% c("N_conteggio", "N_altri", "N_auto_rimorchio", "N_autobus", "N_moto")) %>%
+  filter(classi %in% to_keep)
+
+
+ALL_passaggi_hourly <- ALL_passaggi_hourly[order(-ALL_passaggi_hourly$conteggi_totali),]
+# remove rows with 0 values
+ALL_passaggi_hourly$classi <- gsub("N_","", (ALL_passaggi_hourly$classi))
+ALL_passaggi_hourly$classi <- gsub("\\camion_7_5m\\b","camion < 7.5m", (ALL_passaggi_hourly$classi))
+ALL_passaggi_hourly$classi <- gsub("\\camion_7_5m_1\\b", "camion > 7.5m", (ALL_passaggi_hourly$classi))
+
+ALL_passaggi_hourly <- as.data.frame(ALL_passaggi_hourly)
+ALL_passaggi_hourly$classi <- as.character(ALL_passaggi_hourly$classi)
+
+categories <- as.character( unique(ALL_passaggi_hourly$classi))
+
+
+ALL_passaggi_hourly_auto <- ALL_passaggi_hourly %>%
+  group_by(direzione,
+           hour) %>%
+  filter(classi == "auto") %>%
+    summarize(somma = sum(conteggi_totali))
+ALL_passaggi_hourly_auto$classi <- "auto"
+
+ALL_passaggi_hourly_pesanti <- ALL_passaggi_hourly %>%
+  group_by(direzione,
+           hour) %>%
+  filter(classi %in% c( "autotreni" ,    "furgoni" , "articolati",       "camion > 7.5m",
+  "camion < 7.5m")) %>%
+  summarize(somma = sum(conteggi_totali))
+ALL_passaggi_hourly_pesanti$classi <- "pesanti"
+names(ALL_passaggi_hourly_pesanti) <- c("direzione", "hour",  "conteggi_pesanti", "classi")
+names(ALL_passaggi_hourly_auto) <- c("direzione", "hour",  "conteggi_auto", "classi")
+
+sum(ALL_passaggi_hourly_pesanti$conteggi_pesanti)
+sum(ALL_passaggi_hourly_auto$conteggi_auto)
+
+ALL_passaggi_ANAS <- ALL_passaggi_hourly_auto %>%
+  left_join(ALL_passaggi_hourly_pesanti, by = c("direzione", "hour"))
+ALL_passaggi_ANAS <- ALL_passaggi_ANAS %>%
+  mutate(conteggi_totali = (conteggi_pesanti + conteggi_auto))
+
+write.csv(ALL_passaggi_ANAS, "ALL_passaggi_hourly_ANAS.csv")
+
+
+############################################################3
+##############################################################
+
+
+
+
+
+
+
+```
+
+*<br/><br/>*
+
+
+
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 4f.**  Numero di passaggi orari per giorni feriali e per classe di autoveicoli sul tratto dell'autostrada A2 (km5+004) nella direzione verso Avellino"}
 
 ################################
@@ -971,14 +1142,16 @@ DB_passaggi <- cbind(DB_passaggi, DB$corsia, DB$direzione)
 names(DB_passaggi) <- c(all_passaggi, "corsia", "direzione")
 # transpose data
 passaggi <- gather(DB_passaggi, "classi", "records", 1:length(all_passaggi))
+
 passaggi$records <- as.numeric(passaggi$records)
 
 # somma di tutti i tipi di conteggi per i passaggi di veicoli
 STATS_passaggi <- passaggi %>%
-  group_by( #corsia,
+  group_by(# corsia,
            direzione,
            classi) %>%
   summarise(conteggi_totali = sum(records, na.rm = TRUE))
+
 
 STATS_passaggi$classi <- as.factor(STATS_passaggi$classi)
 # change "passaggi with "N

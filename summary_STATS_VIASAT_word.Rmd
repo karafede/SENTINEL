@@ -4,10 +4,10 @@ author:
 - Federico Karagulian
 date: "ultima versione `r format(Sys.time(), '%d %B %Y, %H:%M')`"
 output:
+  html_document: default
+  pdf_document: default
   word_document: 
     reference_docx: word_style_FK.docx
-  pdf_document: default
-  html_document: default
   number_sections: true
   bookdown::word_document: default
 ---
@@ -132,10 +132,90 @@ data <- data %>%
 data$day <- as.factor((data$day))
 data$hour <- as.factor((data$hour))
 
-## resample to 1 hour
+## resample to 1 hour (dati grezzi)
 total_counts_direzione_all <- data %>%
     group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype, hour) %>%
     summarize(count = length(idterm))
+
+
+##########################################################################
+##########################################################################
+#### dati grezzi #########################################################
+
+passaggi_grezzi_VIASAT <- as.data.frame(total_counts_direzione_all)
+passaggi_grezzi_VIASAT$Date <- as.character(passaggi_grezzi_VIASAT$Date)
+### load dati grezzi ANAS
+passaggi_grezzi_ANAS <- read.csv("D:/ENEA_CAS_WORK/SENTINEL/ANAS/passaggi_grezzi_ANAS.csv")[-1]
+
+joined_ANAS_VIASAT_grezzi <- passaggi_grezzi_VIASAT %>%
+  left_join(passaggi_grezzi_ANAS, by = c("Date", "direzione", "vehtype"))
+
+## rename "counts" columns
+names(joined_ANAS_VIASAT_grezzi)[names(joined_ANAS_VIASAT_grezzi) == 'count.x'] <- 'passaggi_VIASAT'
+
+names(joined_ANAS_VIASAT_grezzi)[names(joined_ANAS_VIASAT_grezzi) == 'count.y'] <- 'passaggi_ANAS'
+
+#### calculate coefficient of penetration VIASAT/ANAS with all hourly data
+joined_ANAS_VIASAT_grezzi$ratio <- round(((joined_ANAS_VIASAT_grezzi$passaggi_VIASAT)/(joined_ANAS_VIASAT_grezzi$passaggi_ANAS))*100, digits = 1)
+
+
+#### density plot ###
+#####################
+
+
+library(scales)
+
+### get values from geom_density()
+m <- ggplot(joined_ANAS_VIASAT_grezzi, aes(x = ratio))
+m <- m + geom_density()
+p <- ggplot_build(m)
+max_density <- max(p$data[[1]]$density)
+max_percentage <- 100
+data_dens <- p$data[[1]]
+
+breaks_density <- seq(0, max_density, by = 0.01)
+breaks_perc <- round((breaks_density*max_percentage)/max_density, digits = 0)
+
+q <- ggplot(data = data_dens,
+            aes(x, ndensity)) +
+  theme_bw() +
+  geom_line(alpha=1, col="red", size = 1, linetype="dashed") +
+  stat_peaks(colour = "red", span = 21, ignore_threshold = 0.5) +
+  stat_peaks(geom = "text", colour = "blue", vjust = -0.5, size = 4, x.label.fmt = "%04d",
+             span = 5, ignore_threshold = 0.05) +
+  geom_point(alpha=1, col="black", size = 1) +
+  # facet_wrap( ~ direzione, ncol = 4) +
+  guides(fill=FALSE)
+
+p <- ggplot(joined_ANAS_VIASAT_grezzi, aes(x=ratio)) +
+  geom_density(position="identity") +
+  scale_y_continuous(breaks = breaks_density,
+       labels = c(paste0(breaks_perc, "%")) ) +
+  facet_wrap( ~ direzione, ncol = 4) +
+    theme_bw() +
+    guides(fill=FALSE) +
+    theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=10)) +
+    theme(axis.text.x=element_text(size=10, colour = "black")) +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+    # theme(axis.title.x = element_blank()) +
+    xlab("coefficiente penetrazione (%) (ANAS/VIASAT)") +
+    ylab("conteggi") +
+     geom_vline(xintercept = 1.5, col="blue", lty=2, size=1) +
+     geom_text(aes(x = 1.5 , y = 0.025 , label = "1.5%"), size = 4) +
+     geom_vline(xintercept = 3.5, col="red", lty=2, size=1) +
+     geom_text(aes(x = 3.5 , y = 0.00007 , label = "3.5%"), size = 4) +
+     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+    ggtitle("Coefficiente di penetrazione tra dati VIASAT e dati ANAS (31 Ago.-18 Sett. 2019)") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+p
+
+
+
+##########################################################################
+##########################################################################
+##########################################################################
+##########################################################################
 
 total_counts_direzione <- total_counts_direzione_all %>%
     group_by(direzione) %>%
@@ -192,10 +272,10 @@ penetration = mean(total_counts_direzione$`%(VIASAT/ANAS)`)
 total_counts_direzione_type <- total_counts_direzione_type %>%
   left_join(total_counts_direzione, by = "direzione")
 total_counts_direzione_type <- total_counts_direzione_type %>%
-  select(direzione, vehtype, count_VIASAT, `passaggi totali VIASAT`)
+  dplyr::select(direzione, vehtype, count_VIASAT, `passaggi totali VIASAT`)
 total_counts_direzione_type$fraction <- round(((total_counts_direzione_type$count_VIASAT)/total_counts_direzione_type$`passaggi totali VIASAT`)*100, digits = 0)
 total_counts_direzione_type <- total_counts_direzione_type %>%
-  select(direzione, vehtype, count_VIASAT, fraction)
+   dplyr::select(direzione, vehtype, count_VIASAT, fraction)
 names(total_counts_direzione_type) <-  c("direzione", "classi", "passaggi totali VIASAT", "frazione %") 
 
 
@@ -344,7 +424,7 @@ q <- ggplot(data = total_counts_direzione_type,
   geom_bar(stat = "identity", position = position_stack()) +
   scale_x_discrete(limits = categories) +
   geom_text_repel(aes(label=paste0(`frazione %`, "%")), vjust=1, color="black",
-            position = position_stack(0.8), size=5) +
+            position = position_stack(0.4), size=5) +
   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
   theme(axis.title.x = element_blank()) +
   ylab(expression(paste("numero di passaggi"))) +
@@ -460,6 +540,9 @@ categories <- as.character( unique(VIASAT_STATS_passaggi_daily$vehtype))
 ### plot passaggi by % pecentage and by DAY #####
 ###################################################
 
+## correct percentages
+VIASAT_STATS_passaggi_daily$norm_conteggi[VIASAT_STATS_passaggi_daily$vehtype == "veicoli pesanti"] <-  rev(100 - VIASAT_STATS_passaggi_daily$norm_conteggi[VIASAT_STATS_passaggi_daily$vehtype == "auto"])
+
 
 p <- ggplot(data = VIASAT_STATS_passaggi_daily,
               aes(day, conteggi_per_tipo, fill = day)) + guides(fill=FALSE) +
@@ -536,7 +619,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     # facet_wrap( ~ vehtype, ncol = 4) +  
     facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    # ylim(0, 1100000) +
+    ylim(0, 80) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -611,7 +694,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     # facet_wrap( ~ vehtype, ncol = 4) +  
     facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    # ylim(0, 1100000) +
+    ylim(0, 80) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
