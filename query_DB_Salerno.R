@@ -328,9 +328,65 @@ diff
 
 
 
-# write.csv(prova, "flow_mapmatching_A2_salerno_2019.csv")
+##########################################################################
+##########################################################################
+##########################################################################
+##########################################################################
+######## queries on new EDGES ############################################
+
+## (25844113, 1110082172)  <-- a Salerno
+## (25844113, 32052207)  <-- a Battipaglia
+
+## (15414167, 32048592)  --> da Salerno
+## (465218161, 32048592)  --> da Battipaglia
 
 
+start_time = Sys.time()
+
+data_bivio =  dbGetQuery(conn_HAIG, "
+                     WITH path AS(SELECT 
+                            split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
+                            u, v,
+                            timedate, mean_speed, idtrace, sequenza
+                            FROM mapmatching_2019
+                           WHERE (u, v) in (VALUES (25844113, 1110082172),
+                           (25844113, 32052207), (15414167, 32048592),
+                           (465218161, 32048592))
+                                )
+                             SELECT path.idterm, path.u, path.v, path.timedate,
+                                    path.mean_speed, path.sequenza,
+                                    \"OSM_edges\".length,
+                                    \"OSM_edges\".highway,
+                                    \"OSM_edges\".name,
+                                    \"OSM_edges\".ref,
+                                    dataraw.speed,
+                                    dataraw.id
+                        FROM path
+                            LEFT JOIN dataraw ON path.idtrace = dataraw.id
+                            LEFT JOIN \"OSM_edges\" ON path.u = \"OSM_edges\".u AND path.v = \"OSM_edges\".v  
+                                ")
+
+stop_time = Sys.time()
+diff <- (stop_time - start_time)
+diff
+
+
+
+## filter data with speel < 200 km/h
+data_bivio <- data_bivio %>%
+    filter(mean_speed < 200)
+
+n_data <- data_bivio %>%
+    group_by(u,v) %>%
+    summarise(MEDIAN_speed = median(mean_speed, na.rm=T),
+              MEDIAN_instant_speed = median(speed, na.rm=T))
+
+
+
+## left join with "type" and "portata"
+data_bivio <- data_bivio %>%
+    left_join(idterm_vehtype_portata, by = "idterm")
+write.csv(data_bivio, "FCD_bivio_Salerno_2019.csv")
 
 
 ###########################################################################

@@ -622,6 +622,31 @@ superamenti <- portata_veh %>%
   filter(`superamento lim. velocità` == "YES") %>%
   summarize(count_superamenti = length(`superamento lim. velocità`))
 
+#############################################################
+#### using raw data #########################################
+
+portata = portata_raw$portata
+speed = portata_raw$speed
+
+## get all Level of Services by hour and by direction
+over_limit = NULL
+for (i in 1:nrow(portata_raw)) {
+  # print(paste(c("==========", i)))
+  OVER_LIMIT = limits_pesanti_fun(portata[i], speed[i])
+  # print(OVER_LIMIT)
+  over_limit = rbind(over_limit, OVER_LIMIT)
+}
+
+OVER_LIMIT <- as.data.frame(over_limit)
+rownames(OVER_LIMIT) <- NULL
+names(OVER_LIMIT) <- "superamento lim. velocità"
+portata_raw <- cbind(portata_raw, OVER_LIMIT)
+
+
+superamenti_raw <- portata_raw %>%
+  group_by(direzione, portata) %>%
+  filter(`superamento lim. velocità` == "YES") 
+
 
 ##############################################################
 ##############################################################
@@ -678,30 +703,6 @@ p <- ggplot(data = portata_veh,
 # q
 
 
-
-
-#### histograms
-
-q <- ggplot(data = portata_raw, 
-            aes(portata, fill = direzione)) +
-  theme_bw() +
-   geom_histogram(bins = 50) +
- facet_wrap( ~ direzione, ncol = 2) +
-   theme( strip.text = element_text(size = 13)) +
-  guides(fill=FALSE) +
-  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=13)) +
-  theme(axis.text.x=element_text(size=13, colour = "black")) +
-  theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
-  xlab("portata (kg)") +
-  ylab("conteggi") +   
-   geom_text(aes(x = 13000 , y = 700 , label = "18000"), size = 5) +
-   geom_text(aes(x = 6200 , y = 250 , label = "3500"), size = 5) +
-    geom_text(aes(x = 29000 , y = 220 , label = "26000"), size = 5) +
-   theme(axis.title.y = element_text(face="bold", colour="black", size=13),
-        axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
-  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
-# q
 
 
 # library(scales) 
@@ -788,6 +789,28 @@ portata_veh <- portata_veh %>%
   group_by(direzione) %>%
   mutate(portata = factor(portata, levels = portata[order(conteggi)]))
 
+
+#### histograms
+
+q <- ggplot(data = portata_raw, 
+            aes(portata, fill = direzione)) +
+  theme_bw() +
+   geom_histogram(bins = 50) +
+ facet_wrap( ~ direzione, ncol = 2) +
+   theme( strip.text = element_text(size = 13)) +
+  guides(fill=FALSE) +
+  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13, colour = "black")) +
+  theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+  xlab("portata (kg)") +
+  ylab("conteggi") +   
+  geom_text(aes(x = 13000 , y = 700 , label = "18000"), size = 5) +
+  geom_text(aes(x = 6200 , y = 250 , label = "3500"), size = 5) +
+  geom_text(aes(x = 29000 , y = 220 , label = "26000"), size = 5) +
+  theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
 q
 
 
@@ -807,6 +830,7 @@ q
 
 superamenti <- as.data.frame(superamenti)
 superamenti$portata <- as.factor(superamenti$portata)
+
 
 all_superamenti <- superamenti%>%
   group_by(direzione) %>%
@@ -832,8 +856,8 @@ count_superamenti <- data.frame(veicoli_pesanti = c(summary_superamenti$no_super
                                 direzione = c("--> Salerno", "<-- Avellino ", 
                                               "--> Salerno", "<-- Avellino "),
                                 superamenti =c("","", "superamenti",  "superamenti"),
-                                perc_superamenti = c("0", "0",
-                                                     summary_superamenti$perc_superamenti))
+                                perc_superamenti = c(" ", " ",
+                                                     paste0(summary_superamenti$perc_superamenti, "%")))
 
 
 count_superamenti$classi <- "veicoli pesanti"
@@ -886,7 +910,7 @@ q2 <- ggplot(data = count_superamenti,
   geom_bar(stat = "identity", position = position_stack()) +
   guides(fill=FALSE) +
   # scale_x_discrete(limits = categories) +
-  geom_text_repel(aes(label=paste0(perc_superamenti, "%")), vjust=1, color="white",
+  geom_text_repel(aes(label=perc_superamenti), vjust=1, color="white",
             position = position_stack(0.4), size=5) +
   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
   theme(axis.title.x = element_blank()) +
@@ -926,36 +950,67 @@ grid.arrange(q1, q2, nrow=1, ncol = 2,
 ### SUPERAMENTI LIMITI VELOCITA'  ######
 ########################################
 
-superamenti_by_portata <- superamenti %>%
-  group_by(portata, direzione) %>%
-  summarize(count_superamenti=sum(count_superamenti))
+# superamenti_by_portata <- superamenti %>%
+#   group_by(portata, direzione) %>%
+#   summarize(count_superamenti=sum(count_superamenti))
+# 
+# superamenti_by_portata <- as.data.frame(superamenti_by_portata)
+# superamenti_by_portata$portata <- unfactor(superamenti_by_portata$portata)
+# 
+# 
+# q <- ggplot(data = superamenti_by_portata,
+#             aes(portata, count_superamenti)) +
+#   theme_bw() +
+#   geom_line(alpha=1, col="red", size = 1, linetype="dashed") +
+#   stat_peaks(colour = "red", span = 21, ignore_threshold = 0.5) +
+#   stat_peaks(geom = "text", colour = "blue", vjust = -0.5, size = 4, x.label.fmt = "%04d",
+#              span = 5, ignore_threshold = 0.05) +
+#   geom_point(alpha=1, col="black", size = 2) +
+#   facet_wrap( ~ direzione, ncol = 4) +
+#   guides(fill=FALSE) +
+#   theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=10)) +
+#   theme(axis.text.x=element_text(size=10, colour = "black")) +
+#   theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+#   # theme(axis.title.x = element_blank()) +
+#   xlab("portata (kg)") +
+#   ylab("conteggi") +
+#      # geom_text(aes(label = paste(percentage, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
+#   # ylim(0, 350) +
+#    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+#         axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+#   ggtitle("Numero di superamenti limite velocità per portata (in kg) (31 Ago.-02 Ott. 2019)") +
+#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
+# q
 
-superamenti_by_portata <- as.data.frame(superamenti_by_portata)
-superamenti_by_portata$portata <- unfactor(superamenti_by_portata$portata)
 
-q <- ggplot(data = superamenti_by_portata, 
-            aes(portata, count_superamenti)) +
-  theme_bw() +
-  geom_line(alpha=1, col="red", size = 1, linetype="dashed") +
-  stat_peaks(colour = "red", span = 21, ignore_threshold = 0.5) +
-  stat_peaks(geom = "text", colour = "blue", vjust = -0.5, size = 4, x.label.fmt = "%04d",
-             span = 5, ignore_threshold = 0.05) +
-  geom_point(alpha=1, col="black", size = 2) +
-  facet_wrap( ~ direzione, ncol = 4) +
-  guides(fill=FALSE) +
-  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=10)) +
-  theme(axis.text.x=element_text(size=10, colour = "black")) +
-  theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
-  # theme(axis.title.x = element_blank()) +  
-  xlab("portata (kg)") +
-  ylab("conteggi") +   
-     # geom_text(aes(label = paste(percentage, sep = "")), size = 3, hjust = 0.5,  vjust = -0.5) +
-  # ylim(0, 350) +
-   theme(axis.title.y = element_text(face="bold", colour="black", size=13),
-        axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
-  ggtitle("Numero di superamenti limite velocità per portata (in kg) (31 Ago.-02 Ott. 2019)") + 
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
-q
+
+#### histograms
+
+p <- ggplot(superamenti_raw, aes(x=portata, fill=direzione)) +
+     geom_histogram() +
+     theme_bw() +
+    theme( strip.text = element_text(size = 13)) +
+    # geom_density(stat = 'bin') +
+    theme(legend.title=element_blank()) + 
+    aes(y=stat(count)/sum(stat(count))) + 
+    scale_y_continuous(labels = scales::percent) +
+    facet_wrap( ~ direzione, ncol = 2) +
+    guides(fill=FALSE) +
+    theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=12)) +
+    theme(axis.text.x=element_text(size=12, colour = "black")) +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+    xlab("portata (kg)") +
+    ylab("conteggi/totale conteggi (%)") +
+    geom_text(aes(x = 13000 , y = 0.15 , label = "18000"), size = 5) +
+    geom_text(aes(x = 7200 , y = 0.02 , label = "3500"), size = 5) +
+    geom_text(aes(x = 30000 , y = 0.05 , label = "26000"), size = 5) +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
+    ggtitle("Numero di superamenti limite velocità per portata (in kg) (31 Ago.-02 Ott. 2019)") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
+p
+
+
 
 
 ```

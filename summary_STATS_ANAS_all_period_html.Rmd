@@ -121,12 +121,13 @@ names(DB)[names(DB) == 'riferimento_temporale'] <- 'date'
 #########################################################################
 ## filter data within the same time range of Viasat data #####
 
-min <- as.Date("2017-08-31") 
-max <- as.Date("2017-09-19")
-DB <- DB %>%
-  filter(date < max & date > min)
+# min <- as.Date("2017-08-31") 
+# max <- as.Date("2017-09-19")
+# DB <- DB %>%
+#   filter(date < max & date > min)
 
-
+# min(DB$fine_periodo_di_aggregazione)
+# max(DB$fine_periodo_di_aggregazione)
 
 
 Corsia_1A <- DB %>%
@@ -1226,8 +1227,8 @@ q <- ggplot(data = STATS_passaggi,
   geom_text_repel(aes(label=norm_conteggi), vjust=1, color="black",
             position = position_stack(0.85), size=4)+
   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
-  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=11)) +
-  theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13,face="bold", colour = "black")) +
   theme(axis.title.x = element_blank()) +
   ylab(expression(paste("numero di passaggi (a.u)"))) +
   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
@@ -1458,14 +1459,14 @@ q <- ggplot(data = STATS_passaggi,
   theme(strip.text.x = element_text(size = 13, colour = "black")) +
   guides(fill=FALSE) +
   # scale_fill_manual(values=c("#7f7fff", "#7fbf7f", "#ff0000", "#e5e500", "#8e8e8e")) +
-  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=11)) +
-  theme(axis.text.x=element_text(size=10,face="bold", colour = "black")) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1, size=13)) +
+  theme(axis.text.x=element_text(size=13,face="bold", colour = "black")) +
   theme(axis.title.x = element_blank()) +                                     
   ylab("Passaggi") +   
   ylim(0, 500) +
    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=10, colour="black")) +
-  geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, vjust = -0.5) +
+  geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 4, hjust = 0.5, vjust = -0.5) +
   ggtitle("Numero totale di passaggi per corsia di marcia e per classi di autoveicoli (31 Ago.-18 Sett. 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 12))
 q
@@ -1523,10 +1524,10 @@ names(DB)[names(DB) == 'riferimento_temporale'] <- 'date'
 #########################################################################
 ## filter data within the same time range of Viasat data #####
 
-min <- as.Date("2017-08-31") 
-max <- as.Date("2017-09-19")
-DB <- DB %>%
-  filter(date < max & date > min)
+# min <- as.Date("2017-08-31") 
+# max <- as.Date("2017-09-19")
+# DB <- DB %>%
+#   filter(date < max & date > min)
 
 
 Corsia_1A <- DB %>%
@@ -1809,15 +1810,15 @@ DB <- rbind(DB1, DB2)
 
 ## A2 Direzione Salerno (Ascendente)
 
-names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
+names(DB)[names(DB) == 'riferimento_temporale'] <- 'date'
 
 #########################################################################
 ## filter data within the same time range of Viasat data #####
 
-min <- as.Date("2017-08-31") 
-max <- as.Date("2017-09-18")
-DB <- DB %>%
-  filter(date < max & date > min)
+# min <- as.Date("2017-08-31") 
+# max <- as.Date("2017-09-18")
+# DB <- DB %>%
+#   filter(date < max & date > min)
 
 Corsia_1A <- DB %>%
   select(date,
@@ -1940,10 +1941,10 @@ names(DB)[names(DB) == 'fine_periodo_di_aggregazione'] <- 'date'
 #########################################################################
 ## filter data within the same time range of Viasat data #####
 
-min <- as.Date("2017-08-31") 
-max <- as.Date("2017-09-18")
-DB <- DB %>%
-  filter(date < max & date > min)
+# min <- as.Date("2017-08-31") 
+# max <- as.Date("2017-09-18")
+# DB <- DB %>%
+#   filter(date < max & date > min)
 
 # Corsia_1A <- DB %>%
 #   select(date,
@@ -2123,14 +2124,14 @@ q <- ggplot(data = STATS_velocita,
   theme(strip.text.x = element_text(size = 13, colour = "black")) +
   guides(fill=FALSE) +
   # scale_fill_manual(values=c("#7f7fff", "#7fbf7f", "#ff0000", "#e5e500", "#8e8e8e")) +
-  theme(axis.text.x=element_text(angle=65,hjust=1,vjust=1, size=11)) +
-  theme(axis.text.x=element_text(size=10,face="bold", colour = "black")) +
+  theme(axis.text.x=element_text(angle=65,hjust=1,vjust=1, size=12)) +
+  theme(axis.text.x=element_text(size=12,face="bold", colour = "black")) +
   theme(axis.title.x = element_blank()) +                                     
   ylab("velocita' (km/h)") +   
   ylim(0, 130) +
    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=10, colour="black")) +
-  geom_text(aes(label = paste(velocita_medie, sep = "")), size = 3, hjust = 0.5, vjust = -0.5) +
+  geom_text(aes(label = paste(velocita_medie, sep = "")), size = 4, hjust = 0.5, vjust = -0.5) +
   ggtitle("Velocita' per classi (1-18 Settembre 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
 q
@@ -2159,12 +2160,12 @@ q
 ## get the months of observations
 DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
 
-## filter data as the same time-range of VIASAT data
-min <- as.Date("2017-08-31")
-max <- as.Date("2017-09-18")
-
-DB <- DB %>%
-  filter(date < max & date > min)
+# ## filter data as the same time-range of VIASAT data
+# min <- as.Date("2017-08-31")
+# max <- as.Date("2017-09-18")
+# 
+# DB <- DB %>%
+#   filter(date < max & date > min)
 
 # get all names for speficic classes of velocita'
 all_velocita <- names(DB[grep(pattern  = "velocita", x = names(DB))])
