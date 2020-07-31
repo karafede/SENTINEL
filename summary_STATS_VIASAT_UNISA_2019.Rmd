@@ -1,13 +1,13 @@
 ---
-title: "Analisi dati VIASAT A2"
+title: "Analisi dati VIASAT A2 (arco SENTINEL 31 Ago.-02 Ott. 2019)"
 author:
 - Federico Karagulian
 date: "ultima versione `r format(Sys.time(), '%d %B %Y, %H:%M')`"
 output:
-  html_document: default
-  pdf_document: default
   word_document: 
     reference_docx: word_style_FK.docx
+  pdf_document: default
+  html_document: default
   number_sections: true
   bookdown::word_document: default
 ---
