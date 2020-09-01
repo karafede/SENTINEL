@@ -56,6 +56,7 @@ library(widgetframe)
 library(grid)
 library(gridExtra)
 library(pander)
+library(varhandle)
 options(scipen=5)
 
 # saving the original graphical parameters
@@ -809,6 +810,7 @@ categories <- as.character( unique(STATS_passaggi_hourly$classi))
 ### plot passaggi by % pecentage and by DAY #####
 ###################################################
 
+STATS_passaggi_hourly$hour <- unfactor(STATS_passaggi_hourly$hour)
 STATS_passaggi_hourly$hour <- as.numeric(STATS_passaggi_hourly$hour)
 
 STATS_passaggi_hourly_SALERNO <- STATS_passaggi_hourly %>%
@@ -1046,6 +1048,7 @@ categories <- as.character( unique(STATS_passaggi_hourly$classi))
 ### plot passaggi by % pecentage and by DAY #####
 ###################################################
 
+STATS_passaggi_hourly$hour <- unfactor(STATS_passaggi_hourly$hour)
 STATS_passaggi_hourly$hour <- as.numeric(STATS_passaggi_hourly$hour)
 
 STATS_passaggi_hourly_SALERNO <- STATS_passaggi_hourly %>%
