@@ -4,10 +4,10 @@ author:
 - Federico Karagulian
 date: "ultima versione `r format(Sys.time(), '%d %B %Y, %H:%M')`"
 output:
+  html_document: default
+  pdf_document: default
   word_document: 
     reference_docx: word_style_FK.docx
-  pdf_document: default
-  html_document: default
   number_sections: true
   bookdown::word_document: default
 ---
@@ -268,7 +268,7 @@ q
 
 *<br/><br/>*
 
-L'andamento del numero di passaggi per giorno della settimana e per tipo di veicolo è riportato in **Figura 3**. Per i veicoli pesanti, i dati Viasat mostrano che i giorni di Sabato e Domenica sono quelli con il minore numero di passaggi. Questo risultato è in linea con i conteggi totali di mezzi pesanti osservato per i dati ANAS. Tuttavia, per le automobili, non è stato osservato lo stesso trend temporale tra i dati **Viasat** ed i dati **ANAS**. Questo significa che i dati Viasat per i veicoli pesanti sono più rappresentativi dei dati Viasat delle automobili se usati come alternativa ai dati ANAS. Tuttavia il trend orario del numero di passaggi (**Figura 4** e **Figura 4a**) rivela due andamenti diversi per i **giorni feriali** e **quelli festivi**. Come mostrato in **Figura 4**, durante i giorni feriali abbiamo un picco di traffico verso le ore 11:00 e verso le ore 20:00. Una situazione simile e' stata osservata con i dati ANAS anche se dobbiamo tenere in considerazione che il dato ANAS e' sicuramente piu' granulare di quello di VIASAT e quindi piu' dettagliato. L'andamento orario nei giorni festivi mostra dei picchi di traffico nelle ore 13:00 (verso Salerno), 15:00 (verso Avellino) e 20:00 (verso Salerno e Avellino).
+L'andamento del numero di passaggi per giorno della settimana e per tipo di veicolo è riportato in **Figura 3**. Per i veicoli pesanti, i dati Viasat mostrano che i giorni di Sabato e Domenica sono quelli con il minore numero di passaggi. Questo risultato è in linea con i conteggi totali di mezzi pesanti osservato per i dati ANAS. Tuttavia, per le automobili, non è stato osservato lo stesso trend temporale tra i dati **Viasat** ed i dati **ANAS**. Questo significa che i dati Viasat per i veicoli pesanti sono più rappresentativi dei dati Viasat delle automobili se usati come alternativa ai dati ANAS. Tuttavia il trend orario del numero di passaggi (**Figura 4** e **Figura 4a**) rivela due andamenti diversi per i **giorni feriali** e **quelli festivi**. Come mostrato in **Figura 4**, durante i giorni feriali abbiamo un picco di traffico verso le ore 10:00 e verso le ore 20:00. Una situazione simile e' stata osservata con i dati ANAS anche se dobbiamo tenere in considerazione che il dato ANAS e' sicuramente piu' granulare di quello di VIASAT e quindi piu' dettagliato. L'andamento orario nei giorni festivi mostra dei picchi di traffico alle ore 14:00 (verso Salerno e Avellino) 19:00 (verso Salerno) e alle ore 21:00 (verso Avellino).
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 3.** Numero di passaggi totali per giorno della settimana e per classe di autoveicoli su un tratto dell'autostrada A2 (Salerno-Avellino). I numeri all'interno del grafico indicano la distribuzione percentuale per classi di veicolo del numero di passaggi."}
@@ -363,7 +363,8 @@ VIASAT_STATS_passaggi_daily <- as.data.frame(VIASAT_STATS_passaggi_daily)
 
 categories <- as.character( unique(VIASAT_STATS_passaggi_daily$vehtype))
 
-### plot passaggi by % pecentage and by DAY #####
+###################################################
+### plot passaggi by % pecentage and by DAY #######
 ###################################################
 
 ## correct percentages
@@ -432,6 +433,8 @@ VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
  
 VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly[order(-VIASAT_STATS_passaggi_hourly$conteggi_totali),]
 
+
+VIASAT_STATS_passaggi_hourly$hour <- unfactor(VIASAT_STATS_passaggi_hourly$hour)
 VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hour)
 
 #### plot
@@ -507,6 +510,7 @@ VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
  
 VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly[order(-VIASAT_STATS_passaggi_hourly$conteggi_totali),]
 
+VIASAT_STATS_passaggi_hourly$hour <- unfactor(VIASAT_STATS_passaggi_hourly$hour)
 VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hour)
 
 #### plot
@@ -584,7 +588,8 @@ portata_veh$hour <- as.factor((portata_veh$hour))
 ###############################################
 
 
-### function to estimate the traffic states (LOS - Level of Service)
+### function to estimate the excedances of speed limits based on speeds and portata
+### portata is expressed in units of Kg
 limits_pesanti_fun <- function(portata, speed){
   ## autostrade
    if ((portata >= 12000) & (speed > 80))
@@ -602,7 +607,7 @@ limits_pesanti_fun <- function(portata, speed){
 portata = portata_veh$portata
 speed = portata_veh$speed
 
-## get all Level of Services by hour and by direction
+## get excedances of speed limits
 over_limit = NULL
 for (i in 1:nrow(portata_veh)) {
   # print(paste(c("==========", i)))
@@ -628,7 +633,7 @@ superamenti <- portata_veh %>%
 portata = portata_raw$portata
 speed = portata_raw$speed
 
-## get all Level of Services by hour and by direction
+## get excedances of speed limits
 over_limit = NULL
 for (i in 1:nrow(portata_raw)) {
   # print(paste(c("==========", i)))
@@ -1225,7 +1230,7 @@ p <- ggplot(data =velocita_ANAS,  aes((x=speed))) +
               size=0.5) +
     ggtitle("Distribuzione delle velocità istantanee (ANAS & VIASAT; 31 Ago.-02 Ott. 2019)") +
     theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
-p
+# p
 
 ```
 
@@ -1235,29 +1240,29 @@ p
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella 3a.**"}
 
 
-## fit with a "gaussian/normal" distribution
-fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$speed, "norm")
-class(fit_ANAS) <- c("fitdist", "fitdistr") 
-fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
-names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
-
-fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS)) 
-fit_ANAS <- fit_ANAS %>%
-  filter(`tipo veicolo` == "veicoli ANAS")
-
-fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
-### combine the data in an unique dataframe
-all_fits <- rbind(fit_ANAS, fit_VIASAT)
-names(all_fits) <- c("", "source data", "velocità")
-
-
-
-Caption <- paste0("**Tabella 3a.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee**con una distribuzione *gaussiana*. Sono stati confrontati dati ANAS e FCD di Viasat per il periodo 31 Ago.-02 Ott. 2019. I parametri di valore medio e di deviazione standard sono riportati per tutti gli autoveicoli")
-set.caption(Caption)
-panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
-panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
-panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
-pander(all_fits, emphasize.strong.cols = 1, missing = "")
+# ## fit with a "gaussian/normal" distribution
+# fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$speed, "norm")
+# class(fit_ANAS) <- c("fitdist", "fitdistr") 
+# fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
+# names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
+# 
+# fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS)) 
+# fit_ANAS <- fit_ANAS %>%
+#   filter(`tipo veicolo` == "veicoli ANAS")
+# 
+# fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
+# ### combine the data in an unique dataframe
+# all_fits <- rbind(fit_ANAS, fit_VIASAT)
+# names(all_fits) <- c("", "source data", "velocità")
+# 
+# 
+# 
+# Caption <- paste0("**Tabella 3a.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee**con una distribuzione *gaussiana*. Sono stati confrontati dati ANAS e FCD di Viasat per il periodo 31 Ago.-02 Ott. 2019. I parametri di valore medio e di deviazione standard sono riportati per tutti gli autoveicoli")
+# set.caption(Caption)
+# panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+# panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+# panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+# pander(all_fits, emphasize.strong.cols = 1, missing = "")
 
 ````
 
@@ -1265,7 +1270,7 @@ pander(all_fits, emphasize.strong.cols = 1, missing = "")
 
 ## Stati del traffico (Livelli di Servizio LOS)
 
-Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale in esame, e' stata stimata per ogni ora del giorno. Il rapporto tra il flusso orario e la velocità è risultato nella stima della **densità spaziale** che è rappresentata in **Figura 8**.  
+Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale per corsia, e' stata stimata per ogni ora del giorno. Il rapporto tra il *flusso reale orario* per corsia e la *velocità media* è risultato nella stima della **densità spaziale** che è rappresentata in **Figura 8**.  
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Flusso per ora della giornata su un tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Salerno-Avellino)."}
@@ -1280,6 +1285,7 @@ Per convenzione, il flusso orario dei veicoli è stato calcolato su una base tem
 #### FLUX ###################
 #############################
 
+COEFF_PENETR <- 3.8
 
 ## get all passaggi (conteggi) by hour
 ## resample data  y 15 minutes
@@ -1290,15 +1296,37 @@ VIASAT_STATS_passaggi_hourly <- data %>%
               count = length(idterm))
 
 
+VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
+
+### THEORY (pag. 26)
+### https://moodle2.units.it/pluginfile.php/101161/mod_resource/content/1/PIV_2016-2017_L03_TrafficoCapacita.pdf
+
+#### calcola capacita' massima e PHF (Peak Hour Factor)
+VIASAT_STATS_passaggi_15min <- VIASAT_STATS_passaggi_hourly %>%
+  group_by(direzione, u,v) %>%
+  mutate(time_15 = format(ymd_hms(Date), "%H:%M:%S"))
+
+VIASAT_STATS_passaggi_15min <- VIASAT_STATS_passaggi_15min %>%
+  group_by(direzione, u,v, time_15) %>%
+  summarise(flux = mean((count)/1.0, na.rm = TRUE))
+# CAPACITÀ: massimo volume orario di traffico in una generica sezione e in determinate condizioni operative,relativo ad un intervallo di tempo che generalmente è fissato in 15 min.
+
+PORTATA <- ((4*max(VIASAT_STATS_passaggi_15min$flux))*100)/COEFF_PENETR
+
+
 VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
   group_by(direzione, u,v,
            hour) %>%
   summarise(flux = mean((count)/0.25, na.rm = TRUE))
 
 
-#### rescale to ANAS data
-VIASAT_STATS_passaggi_hourly$flux <- ((VIASAT_STATS_passaggi_hourly$flux)*100)/3.8
+#####------ peak hour factor - PHF ---------- #######
+### volume orario nell'ora di punta
+V = (max(VIASAT_STATS_passaggi_hourly$flux)*100)/COEFF_PENETR
+PHF <- round(V/PORTATA, digits = 2)
 
+#### rescale to ANAS data
+VIASAT_STATS_passaggi_hourly$flux <- ((VIASAT_STATS_passaggi_hourly$flux)*100)/COEFF_PENETR   
 
 
 
@@ -1309,6 +1337,7 @@ VIASAT_STATS_passaggi_hourly$perc_time_spent_foll <- round(100*(1-exp(-0.000879*
                               digits = 0)
 
 
+VIASAT_STATS_passaggi_hourly$hour <- unfactor(VIASAT_STATS_passaggi_hourly$hour)
 VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hour)
 
 p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
@@ -1348,6 +1377,9 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Salerno-Avellino). Per il calcolo della densita' spaziale, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
  
 ########## density ##################################
+### il calcolo della densita' e' PER CORSIA !!! ####
+
+## length is in meters...
 
 lunghezza <- data %>%
   group_by(u,v, length) %>%
@@ -1372,15 +1404,15 @@ density_by_day <- passaggi_density %>%
 density_by_day <- density_by_day %>%
   left_join(lunghezza, by = c("u", "v")) 
 
+density_by_day$hour <- unfactor(density_by_day$hour)
 density_by_day$hour <- as.numeric(density_by_day$hour)
 
 density_by_day <- density_by_day %>%
   left_join(VIASAT_STATS_passaggi_hourly, by = c("direzione", "u", "v", "hour"))
 
 
-
 #### rescale to ANAS data
-density_by_day$count <- ((density_by_day$count)*100)/4
+density_by_day$count <- ((density_by_day$count)*100)/COEFF_PENETR  # 3.8
 
 
 density_by_day <- density_by_day %>%
@@ -1391,11 +1423,23 @@ density_by_day <- density_by_day %>%
             perc_time_spent_foll = mean(perc_time_spent_foll),
             mean_speed = mean(mean_speed))
 
+### flusso reale (per corsia e con fattori di correzzione)
+### https://moodle2.units.it/pluginfile.php/101161/mod_resource/content/1/PIV_2016-2017_L03_TrafficoCapacita.pdf
+## frazione veicoli pesanti
+PT <- max(total_counts_direzione_type[total_counts_direzione_type$classi == "veicoli pesanti", ]$`frazione %`)/100
+## fhv: coefficiente per tipo di veicoli
+fhv <- 1/(1+PT*(2.5-1))   ## il numero 2.5 si trova nella tabell "exibits 28-3 pag 67 del documento di sopra.
 
-### DENSITA' veicolare: DENSITÀ DI TRAFFICO [D = veic/km]: rapporto tra il VOLUME di traffico ##[V] misurato in un determinato tronco stradale in un breve intervallo di tempo (15 min.) e
+
+#### FLUSSO VEICOLARE
+### the real_flux is calculated on only one corsia
+density_by_day$real_flux <- (density_by_day$flux)/(PHF*2*0.8163*1)
+
+
+### DENSITA' veicolare: DENSITÀ DI TRAFFICO [D = veic/km]: rapporto tra il VOLUME di traffico ## [V] misurato in un determinato tronco stradale in un breve intervallo di tempo (15 min.) e
 ### la media delle VELOCITÀ [S] dei veicoli:
 
-density_by_day$density <- (density_by_day$flux)/(density_by_day$mean_speed)
+density_by_day$density <- (density_by_day$real_flux)/(density_by_day$mean_speed)
 
 ## add field for max speed
 density_by_day$max_speed <- as.numeric(130)
@@ -1441,10 +1485,57 @@ p <- ggplot(data = density_by_day,
 ````
 
 *<br/><br/>*
-Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per la sezione autostradale in esame, i livelli di servizio (Level of Service - LOS) o stati del traffico per ogni ora della giornata sono stati stimati usando la densita' veicolare. I livelli di servizio sono definiti come la misura della prestazione della strada nello smaltire il traffico. Per convenzione, i livelli di servizio  sono 6: da LOS “A” a LOS “F”. I LOS da “A” a “D” hanno una densità inferiore a quello corrispondente alla capacità. Il LOS E corrisponde alla densità critica
-e quindi alla capacità della strada. Il LOS “F” ha densità maggiori e quindi siamo in presenza di flusso instabile.
-Come mostrato in **Figura 9**, durante le ore della giornata sulla sezione stradale in esame abbiamo stimato quattro tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **C** (**flusso stabile**): circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo tipo di flusso è stato osservato durante la maggior parte delle ore centrali della giornata soprattutto nella direzione verso Salerno, 3) il LOS **D** (**flusso inzialmente instabile**) indica che ci sono vincoli alla circolazione, basso comfort ed il flusso può iniziare ad essere instabile con conseguente riduzione del comfort di guida. Questo tipo di flusso e' stato osservato nelle ore serali nella direzioni di Salerno ed Avellino ma anche nella maggior parte delle ore diurne nella direzione di Salerno. 4) il LOS **E** (**flusso instabile**) e' stato solo osservato nella direzione di Avellino verso le ore **11:00, 20:00 e 21:00**. Questo tipo di flusso indica che si e' raggiunta la capacita' della strada e quindi il flusso comincia ad essere molto instabile. 
 
+Il massimo valore di flusso orario, anche indicata come *portata veicolare di progetto* (veicoli/ora) è stato determinato in un intervallo di tempo di 15 minuti ed e' risultato essere **`r PORTATA` veicoli/ora**. E' stato quindi calcolato anche il **fattore dell'ora di punta** o **PHF** (Peak Hour Factor) inteso come il rapporto tra il flusso orario e la portata riferiti all’ora di punta. Considerando i conteggi VIASAT sull'arco SENTINEL, abbiamo stiamato un valore PHF di **`r PHF`**. Tale valore rientra nei valori tipici del PHF per autostrade e strade extraurbane.
+
+Per il calcolo della densita' spaziale per corsia, abbiamo calcolato il flusso orario per corsia in *condizioni reali* ($U_{R}$) che tiene conte di alcuni fattori di correzione come il *PHF*, il numero di corsie, la percentuale di veicoli pesanti ($f_{HV}$) ed il tipo di utenti ($f_{p}$). **Tabella S1** riporta le principali equazioni di riferimento usate per il calcolo del flusso orario reale e della densita' veicolare.
+
+
+
+*<br/><br/>*
+
+
+```{r Tabella  S1, echo = FALSE, warning = FALSE, cache = FALSE, out.width = "70%", results = 'asis', message = FALSE, comment=FALSE}
+
+# build table reporting and explaining formulas about metrics
+Comparison_metrics <- c("flusso reale", "correzione per veicoli pesanti", "densita'")
+
+
+Mathematical_formulas <- c("$$U_{R} [veic/ora/corsia] = \\frac{V_{h}}  {PHF * N * f_{HV} * f_{p} }$$, dove $V_{h}$ e' il flusso orario (veic/ora), $N$ il numero di corsie, $PHF$ il Peak Hour Factor, $f_{HV}$ la correzione per i veicoli pesanti, $f_{P}$ la correzione per il tipo di utenti.",
+                           
+                           "$$f_{HV} = \\frac{1} {1 + P_{T}(E_{T}-1)} $$, dove $P_{T}$ e' la percentuale di veicoli pesanti, $E_{T}$ il numero di autovetture equivalenti rispettivamente a un veicolo pesante.",
+                           "$$D [veic/km] = \\frac{U_{R}} {velocita' media}$$ ")
+
+
+Characteristics <- c("il flusso reale e' per singola corsia ed e' stato calcolato su una base di 15 minuti ($V_{h} = 4V_{15 min}$), $f_{P}$ e' un coefficiente che tiene conto del tipo di utenti e varia 0,85 a 1,00 (i valori più
+bassi si utilizzano in presenza di utenti non abituali)", 
+
+"il valore di $E_{T}$ e' dipende dal tipo di strada e varia da 1.2 a 4.5. Per le autostrade assumiamo un valore di 2.5", 
+
+"la media delle velocita' e' stata calcolata su intervalli temporali di 15 minuti")
+
+df_Comparison_metrics <- data.frame(Comparison_metrics, Mathematical_formulas, Characteristics)
+names(df_Comparison_metrics) <- c("grandezza", "formula", "caratteristiche")
+
+Caption <- paste0("**Tabella S2.** Equazioni principali usate per il calcolo dei flussi reali (ref. Highway Capacity Manual (HCM). Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S. Ed.2000)).")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) 
+panderOptions("table.split.table", Inf) 
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left'))
+pander(df_Comparison_metrics, emphasize.strong.cols = 1, missing = "")
+                        
+
+```
+
+*<br/><br/>*
+
+
+Gli stati del traffico sono stati stimati usando le procedure riportate nell'*Highway capacity manual. Washington, D.C: Transportation Research Board, National Research Council. National Research Council (U.S.) (Ed.). (2000)*. Per la sezione autostradale in esame, i livelli di servizio (Level of Service - LOS) o stati del traffico per ogni ora della giornata sono stati stimati usando la densita' veicolare. I livelli di servizio sono definiti come la misura della prestazione della strada nello smaltire il traffico. Per convenzione, i livelli di servizio  sono 6: da LOS “A” a LOS “F”. I LOS da “A” a “D” hanno una densità inferiore a quello corrispondente alla capacità della strada. Il LOS E corrisponde alla densità critica
+e quindi alla capacità della strada. Il LOS “F” ha densità maggiori e quindi siamo in presenza di flusso instabile.
+Come mostrato in **Figura 9**, durante le ore della giornata sulla sezione stradale in esame abbiamo stimato quattro tipi di LOS: 1) LOS **A** (**flusso libero**): circolazione libera con massimo comfort e flusso stabile. Questo è stato osservato prevalentemente durante le ore notturne e in prima mattinata, 2) LOS **C** (**flusso stabile**): circolazione libera con modesta riduzione della velocità e comfort accettabile. Questo tipo di flusso è stato osservato durante la maggior parte delle ore centrali della giornata soprattutto nella direzione verso Salerno, 3) il LOS **D** (**flusso inzialmente instabile**) indica che ci sono vincoli alla circolazione, basso comfort ed il flusso può iniziare ad essere instabile con conseguente riduzione del comfort di guida. Questo tipo di flusso e' stato osservato nelle ore serali nella direzioni di Salerno ed Avellino ma anche nella maggior parte delle ore diurne nella direzione di Salerno. L'LOS **D** e' stato solo osservato nella direzione di Avellino verso le ore **10:00**. 
+
+
+*<br/><br/>*
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, la lettera **C** indica un stato **STABILE**, le lettere **D** ed **E** indicano uno stato **INIZIALMENTE INSTABILE** ed **INSTABILE**, rispettivamente. Per il calcolo del flusso orario, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
 
@@ -1501,13 +1592,13 @@ traffic_states_fun <- function(density){
   ## autostrade
    if ((density <= 7))
     LOS = "A"
-   else if ((density < 11) & (density > 7))
+   else if ((density <= 11) & (density > 7))
     LOS = "B"
 
    else if ((density <= 16) & (density > 11))
     LOS = "C"
 
-   else if ((density < 22) & (density > 16))  
+   else if ((density <= 22) & (density > 16))  
        LOS = "D"
     else if ((density <= 28) & (density > 22))  
        LOS = "E"
@@ -1518,6 +1609,34 @@ traffic_states_fun <- function(density){
 
   return(LOS)
 }
+
+
+
+# ### function to estimate the traffic states (LOS - Level of Service)
+# traffic_states_fun <- function(density){
+#   ## autostrade
+#    if ((density <= 7) & (speed < 120) & (flux <= 840))
+#     LOS = "A"
+#    
+#    else if ((density < 11) & (density > 7) & (speed < 120) & (flux <= 1320) & (flux > 840))
+#     LOS = "B"
+# 
+#    else if ((density <= 16) & (density > 11) & (speed <= 115) & (speed >120) & (flux >1320) & (flux <= 1840)  )
+#     LOS = "C"
+# 
+#    else if ((density < 22) & (density > 16) & (speed <= 99.6) & (speed >115) & (flux >1840) & (flux <= 2200) )
+#        LOS = "D"
+#    
+#     else if ((density <= 28) & (density > 22) & (speed <= 85.7) & (speed >99.6) & (flux >2200) & (flux <= 2400) )
+#        LOS = "E"
+#     
+#      else if ((density >28))
+#        LOS = "F"
+# 
+#   else LOS = NA
+# 
+#   return(LOS)
+# }
 
 
 time_at_mean_speed = as.vector(density_by_day$perc_time_spent_foll)
@@ -1556,7 +1675,7 @@ p <- ggplot(data = density_by_day,
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
     theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
     theme(axis.title.x = element_blank()) +                  # Remove x-axis label
-    ylab("flusso (veicoli/ora)") +            # Set y-axis label
+    ylab("flusso (veicoli / ora)") +            # Set y-axis label
     xlab(expression(paste(""))) +
     theme(axis.title.y = element_text(face="bold", colour="black", size=10),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=9)) +
@@ -1575,8 +1694,36 @@ p <- ggplot(data = density_by_day,
 
 *<br/><br/>*
 
+## Rappresentazione grafica
 
 
+Il numero di veicoli che attraversano l'arco SENTINEL nella direzione verso Salerno ed Avellino in una giornata tipo (2 Settembre 2019) e' stato calcolato come segue:
+
+1) La tabella di dati **mapmatching** del database **HAIG_Viasat_SA** è stato interrogata applicando un filtro per gli estremi (u,v) dell'arco SENTINEL. Sono stati quindi individuati gli identificativi di tutti i veicoli (automobili e mezzi pesanti) che hanno attraversato l'**arco SENTINEL** durante la giornata del 2 Settembre 2019. Gli identificativi di veicoli sono stati organizzati nella forma di una lista.
+
+2) La tabella di dati  **mapmatching** e' stata nuovamente interrogata assieme alla tabella **dataraw** dei dati originali VIASAT per estrarre **tutti gli archi** attraversati per tipoligia di veicoli (automobili e/o mezzi pesanti) durante la giornata del 2 Settembre 2019.
+
+
+3) Gli archi individuati al punto 2) sono stati filtrati con gli identificativi dei **veicoli che attraversano l'arco SENTINEL**.
+
+4) Sono stati individuati tutti i **viaggi** che hanno interessato l'arco SENTINEL sia verso la direzione di Salerno che quella di Avellino. Quindi e' stata indviduata la **posizione dell'arco SENTINEL** nella **sequenza di archi** che formano ogni singolo viaggio. In seguito, separatamente per la direzione di Salerno (colore rosso nella Figura 10) e per quella di Avellino (colore blue nella Figura 10), sono stati filtrati tutti gli archi relativi ai singoli viaggi transitati sull'arco SENTINEL.
+
+*<br/><br/>*
+
+```{r, echo=FALSE, fig.cap="**Figura 10**.Rappresentazione dei conteggi di mezzi pesanti transitati sull'arco SENTINE il giorno 02 Settembre 2019 (per entrambe le direzioni verso Salerno (rosso) e verso Avellini (blu)).", out.width = '100%'}
+knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/conteggi_pesanti_SENTINEL.png")
+```
+
+
+*<br/><br/>*
+
+
+```{r, echo=FALSE, fig.cap="**Figura 11**.Rappresentazione dei conteggi di tutti gli autoveicoli (mezzi pesanti ed auto).", out.width = '100%'}
+knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/ALL_conteggi_SALERNO_rete.png")
+```
+
+
+*<br/><br/>*
 
 
 

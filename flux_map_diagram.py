@@ -112,7 +112,7 @@ df['date'] = df['timedate'].apply(lambda x: x.strftime("%Y-%m-%d"))
 df=df[df.date == DATE]
 
 ### get only "vehtype = 2" (mezzi pesanti)
-df = df[df.vehtype == 1]
+df = df[df.vehtype == 2]
 
 ## (25844050, 1110091861) <-- Salerno
 ## (1110091904, 3371747395)  --> Avellino
@@ -155,7 +155,7 @@ viasat_data = pd.read_sql_query('''
                        LEFT JOIN dataraw 
                                    ON mapmatching_2019.idtrace = dataraw.id  
                                    WHERE date(mapmatching_2019.timedate) = '2019-09-02' 
-                                   AND dataraw.vehtype::bigint = 1
+                                   AND dataraw.vehtype::bigint = 2
                     ''', conn_HAIG)
 
 now2 = datetime.now()
@@ -169,6 +169,7 @@ print(now2 - now1)
 ### get all data only for the vehicles in the list
 all_salerno = viasat_data[viasat_data.idterm.isin(all_idterms_salerno)] # (u,v) (25844050, 1110091861) <-- Salerno
 all_avellino = viasat_data[viasat_data.idterm.isin(all_idterms_avellino)]  # (u, v) -->  (1110091904, 3371747395)  --> Avellino
+
 
 ## get data with "sequenza" STARTING from the chosen nodes on the A2 for each idterm
 pnt_sequenza_salerno = all_salerno[(all_salerno['u'] == 25844050) & (all_salerno['v'] == 1110091861) ]
@@ -212,7 +213,7 @@ partial_Salerno_bis = pd.DataFrame([])
 
 for idx, idterm in enumerate(all_idterms_salerno):
     print(idterm)
-    # get starting "sequenza"
+    # get starting "idtrajectory"
     idtrajectory = pnt_sequenza_salerno[pnt_sequenza_salerno.idterm == idterm]['idtrajectory'].iloc[0]
     sub = partial_Salerno[(partial_Salerno.idterm == idterm) & (partial_Salerno.idtrajectory == idtrajectory)]
     partial_Salerno_bis = partial_Salerno_bis.append(sub)
@@ -222,7 +223,7 @@ partial_Avellino_bis = pd.DataFrame([])
 
 for idx, idterm in enumerate(all_idterms_avellino):
     print(idterm)
-    # get starting "sequenza"
+    # get starting "idtrajectory"
     idtrajectory = pnt_sequenza_avellino[pnt_sequenza_avellino.idterm == idterm]['idtrajectory'].iloc[0]
     sub = partial_Avellino[(partial_Avellino.idterm == idterm) & (partial_Avellino.idtrajectory == idtrajectory)]
     partial_Avellino_bis = partial_Avellino_bis.append(sub)
@@ -720,5 +721,44 @@ highlight_function=lambda x: {'weight':3,
         fields=['u', 'v', 'counts']),
     ).add_to(my_map)
 
-
 # my_map.save("traffic_pesanti_partial_bivio_Salerno_Battipaglia_02_Sept_2019.html")
+
+
+##########################################################################
+##########################################################################
+
+######################################################################################
+### get ORIGIN and DESTINATION for each idterm #######################################
+######################################################################################
+
+### initialize an empty dataframe
+all_salerno_OD = pd.DataFrame([])
+
+## reload 'all_ID_TRACKS' as list
+with open("all_ID_TRACKS_2019.txt", "r") as file:
+    all_ID_TRACKS = eval(file.readline())
+## reload 'idterms_fleet' as list
+with open("idterms_fleet.txt", "r") as file:
+    idterms_fleet = eval(file.readline())
+
+for idx, idterm in enumerate(all_idterms_salerno):
+    print(idterm)
+    all_data = all_salerno[(all_salerno.idterm == idterm)]
+    ## remove duplicates 'idtrajectories' (trips)
+    all_trips = all_data.drop_duplicates(['idtrajectory'])
+    ## make a list of all_trips
+    all_trips = list(all_trips.idtrajectory.unique())
+    for idx_a, idtrajectory in enumerate(all_trips):
+        print(idtrajectory)
+        ## filter data by idterm and by idtrajectory (trip)
+        data = all_salerno[(all_salerno.idterm == idterm) & (all_salerno.idtrajectory == idtrajectory)]
+        ## sort data by "sequenza'
+        data = data.sort_values('sequenza')
+        ORIGIN = data[data.sequenza == min(data.sequenza)][['u']].iloc[0][0]
+        DESTINATION = data[data.sequenza == max(data.sequenza)][['v']].iloc[0][0]
+        data['ORIGIN'] = ORIGIN
+        data['DESTINATION'] = DESTINATION
+        all_salerno_OD = all_salerno_OD.append(data)
+
+######################################################################################
+######################################################################################
