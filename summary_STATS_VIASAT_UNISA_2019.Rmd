@@ -63,6 +63,8 @@ data <- read.csv(paste0("FCD_UNISA_2017.csv"),
                                    header = T, sep=",")[-1]
 
 
+COEFF_PENETR <- 3.8
+
 
 data <- data %>%
   mutate(timedate = ymd_hms(timedate, tz = "UTC"))
@@ -369,6 +371,13 @@ categories <- as.character( unique(VIASAT_STATS_passaggi_daily$vehtype))
 
 ## correct percentages
 VIASAT_STATS_passaggi_daily$norm_conteggi[VIASAT_STATS_passaggi_daily$vehtype == "veicoli pesanti"] <-  rev(100 - VIASAT_STATS_passaggi_daily$norm_conteggi[VIASAT_STATS_passaggi_daily$vehtype == "auto"])
+
+mean_VIASAT_STATS_passaggi_daily <- VIASAT_STATS_passaggi_daily %>%
+  group_by(vehtype) %>%
+  summarise(mean = mean(conteggi_per_tipo, na.rm = T))
+
+#### rescale to ANAS data
+mean_passaggi_daily_pesanti <- ((mean_VIASAT_STATS_passaggi_daily$mean[2])*100)/COEFF_PENETR  # 3.8
 
 
 p <- ggplot(data = VIASAT_STATS_passaggi_daily,
@@ -1107,7 +1116,7 @@ plots <- lapply(split(data_salerno, data_salerno$vehtype),FUN=function(speed_dis
      # geom_line(aes(y = pois), col = "blue") + 
     # geom_line(aes(y = nbinom), col = "green") + 
     theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
-          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+          axis.text.x=element_text(angle=0,hjust=0.5,vjust=0.5, size=12)) +
     ylab("densità") +
     xlab("velocità (km/h)") +
     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
@@ -1150,7 +1159,7 @@ plots <- lapply(split(data_avellino, data_avellino$vehtype),FUN=function(speed_d
      # geom_line(aes(y = pois), col = "blue") + 
     # geom_line(aes(y = nbinom), col = "green") + 
     theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
-          axis.text.x=element_text(angle=0,hjust=0,vjust=1, size=14)) +
+          axis.text.x=element_text(angle=0,hjust=0.5,vjust=0.5, size=12)) +
     ylab("densità (u.a)") +
     xlab("velocità (km/h)") +
     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
@@ -1260,6 +1269,118 @@ q <- ggplot(data = STATS_velocita,
 q
 
 ```
+
+
+
+*<br/><br/>*
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=7, fig.cap ="**Figura 111.** Media delle velocita' medie per classe di autoveicoli muniti del dispositivo Viasat sul sul tratto SENTINEL)."}
+
+
+########################
+### summary stats ######
+########################
+
+#######################
+### Velocita' #########
+
+#### Istogramma tutti i passaggi su velocità media con intervalli di 20km/h tutti i veicoli
+
+
+## Salerno 
+BBB <- NULL
+bin_speed = seq(from = 0, to = 200, by =20)
+
+for (i in 1:length(bin_speed)){
+  #i=5
+  if (i==1){
+    AAA <- data %>%
+      filter(direzione == "--> Salerno") %>%
+      filter(speed <= bin_speed[i])  %>%
+      summarise(counts = length(idterm))
+  }else{
+    AAA <- data %>%
+     filter(direzione == "--> Salerno") %>%
+      filter(speed <= bin_speed[i] & speed >= bin_speed[i-1]) %>%
+      summarise(counts = length(idterm))
+   
+  }
+  BBB<- rbind(BBB, AAA)
+  
+}
+
+passaggi_20kmh_salerno <- as.data.frame(cbind(bin_speed, BBB))
+passaggi_20kmh_salerno <- na.omit(passaggi_20kmh_salerno)
+passaggi_20kmh_salerno$direzione <- "--> Salerno"
+
+
+
+## Avellino 
+BBB <- NULL
+bin_speed = seq(from = 0, to = 200, by =20)
+
+for (i in 1:length(bin_speed)){
+  #i=5
+  if (i==1){
+    AAA <- data %>%
+      filter(direzione == "<-- Avellino") %>%
+      filter(speed <= bin_speed[i])  %>%
+      summarise(counts = length(idterm))
+  }else{
+    AAA <- data %>%
+     filter(direzione == "<-- Avellino") %>%
+      filter(speed <= bin_speed[i] & speed >= bin_speed[i-1]) %>%
+      summarise(counts = length(idterm))
+   
+  }
+  BBB<- rbind(BBB, AAA)
+  
+}
+
+passaggi_20kmh_avellino <- as.data.frame(cbind(bin_speed, BBB))
+passaggi_20kmh_avellino <- na.omit(passaggi_20kmh_avellino)
+passaggi_20kmh_avellino$direzione <- "<-- Avellino"
+
+passaggi_20kmh <- rbind(passaggi_20kmh_salerno,
+                        passaggi_20kmh_avellino)
+
+## plot
+
+passaggi_20kmh$bin_speed <- as.factor(passaggi_20kmh$bin_speed)
+
+
+
+p <- ggplot(data = passaggi_20kmh,
+              aes(bin_speed, counts, fill = bin_speed)) + guides(fill=FALSE) +
+    geom_bar(stat = "identity") + 
+    facet_wrap(~direzione) +
+    guides(fill=FALSE) +
+    # ylim(0, 90) +
+    theme_bw() +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
+    theme(axis.text.x=element_text(size=13,face="bold", colour = "black")) +
+    theme(axis.title.x = element_blank()) +                  # Remove x-axis label
+    ylab("numero di passaggi") +            # Set y-axis label
+    xlab(expression(paste("velocità (km / h)"))) +
+    theme(axis.title.y = element_text(face="bold", colour="black", size=10),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=9)) +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13),
+          axis.text.x  = element_text(angle=0, vjust=0.5, size=13, hjust = 0.5)) + 
+    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=13)) +
+    # scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
+    ggtitle("Numero passaggi a velocità media ad intevalli di 20km/h") + 
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+  p
+
+
+
+```
+
+*<br/><br/>*
 
 ## 4. Distribuzione delle velocità
 
@@ -1601,7 +1722,7 @@ p <- ggplot(data = density_by_day,
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=12)) +
     theme(axis.text.x=element_text(size=12, colour = "black")) +
-    theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=11)) +
     xlab("flusso (veicoli/ora)") +
     ylab("velocita' (km/h)") +
      theme(axis.title.x = element_text(face="bold", colour="black", size=13),

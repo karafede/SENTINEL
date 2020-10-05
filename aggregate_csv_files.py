@@ -13,6 +13,7 @@ cwd = os.getcwd()
 conn_HAIG = db_connect.connect_HAIG_Viasat_SA()
 cur_HAIG = conn_HAIG.cursor()
 
+
 ## create extension postgis on the database HAIG_Viasat_SA  (only one time)
 
 # cur_HAIG.execute("""
@@ -202,22 +203,57 @@ update routecheck_2019 set geom = st_setsrid(st_point(longitude,latitude),4326)
 conn_HAIG.commit()
 
 
+#### ADD indices to selectd tables ########################################
+###########################################################################
+
 cur_HAIG.execute("""
-CREATE index routecheck_track_idx on public.routecheck_2017("track_ID");
+CREATE index routecheck_2017_id_idx on public.routecheck_2017("id");
 """)
 conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-CREATE index routecheck_2017_lat_idx on public.routecheck_2017(latitude);
+CREATE index routecheck_2017_idterm_idx on public.routecheck_2017("idterm");
+""")
+conn_HAIG.commit()
+
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_id_idx on public.routecheck_2019("id");
 """)
 conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-CREATE index routecheck_2017_lon_idx on public.routecheck_2017(longitude);
+CREATE index routecheck_2019_idterm_idx on public.routecheck_2019("idterm");
 """)
 conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_TRIP_ID_idx on public.routecheck_2017("TRIP_ID");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_TRIP_ID_idx on public.routecheck_2019("TRIP_ID");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_timedate_idx on public.routecheck_2017("timedate");
+""")
+conn_HAIG.commit()
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_timedate_idx on public.routecheck_2019("timedate");
+""")
+conn_HAIG.commit()
+
+
 
 
 cur_HAIG.execute("""
@@ -225,10 +261,16 @@ CREATE index routecheck_2019_lat_idx on public.routecheck_2019(latitude);
 """)
 conn_HAIG.commit()
 
+
 cur_HAIG.execute("""
 CREATE index routecheck_2019_lon_idx on public.routecheck_2019(longitude);
 """)
 conn_HAIG.commit()
+
+
+
+#########################################################################################
+#########################################################################################
 
 
 cur_HAIG.execute("""
@@ -242,11 +284,7 @@ CREATE index routecheck_2019_geom_idx on public.routecheck_2019(geom);
 conn_HAIG.commit()
 
 
-### create index on routecheck_2019
-cur_HAIG.execute("""
-CREATE index routecheck_2019_track_idx on public.routecheck_2019("track_ID");
-""")
-conn_HAIG.commit()
+
 
 ##########################################################
 ## Additional stuff ######################################
@@ -273,15 +311,35 @@ conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-CREATE index routecheck_2017_id_idx on public.routecheck_2017("id");
+CREATE index routecheck_2019_id_idx on public.routecheck_2019("id");
+""")
+conn_HAIG.commit()
+
+
+
+
+
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_grade_idx on public.routecheck_2017("grade");
 """)
 conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-CREATE index routecheck_2017_temp_id_idx on public.routecheck_2017_temp("new_id");
+CREATE index routecheck_2017_anomaly_idx on public.routecheck_2017("anomaly");
 """)
 conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_timedate_idx on public.routecheck_2017("timedate");
+""")
+conn_HAIG.commit()
+
+
+
 
 
 cur_HAIG.execute("""
@@ -477,14 +535,12 @@ all_TRIP_IDs = list(all_VIASAT_TRIP_IDs.TRIP_ID.unique())
 with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_TRIP_IDs_2019.txt", "w") as file:
     file.write(str(all_TRIP_IDs))
 
-
 print(len(all_VIASAT_TRIP_IDs))
 print("trip number:", len(all_TRIP_IDs))
 
 ## get all terminals (unique number of vehicles)
 idterm = list((all_VIASAT_TRIP_IDs.TRIP_ID.str.split('_', expand=True)[0]).unique())
 print("vehicle number:", len(idterm))
-
 
 ## reload 'all_ID_TRACKS' as list
 with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019.txt", "r") as file:
@@ -536,12 +592,6 @@ CREATE INDEX UV_idx_2019 ON public.mapmatching_2019(u,v);
 conn_HAIG.commit()
 
 
-## create index on the "TRIP_ID" column
-cur_HAIG.execute("""
-CREATE index trip_id_match2019_idx on public.mapmatching_2019("TRIP_ID");
-""")
-conn_HAIG.commit()
-
 
 ## create index on the "idtrace" column
 cur_HAIG.execute("""
@@ -552,6 +602,14 @@ conn_HAIG.commit()
 
 cur_HAIG.execute("""
 CREATE index mapmatching_2019_timedate_idx on public.mapmatching_2019(timedate);
+""")
+conn_HAIG.commit()
+
+
+
+## create index on the "TRIP_ID" column
+cur_HAIG.execute("""
+CREATE index trip_id_match2019_idx on public.mapmatching_2019("TRIP_ID");
 """)
 conn_HAIG.commit()
 
@@ -641,3 +699,43 @@ idterm_portata = pd.read_sql_query('''
                         SELECT * 
                         FROM public."idterm_portata"
                         ''', conn_HAIG)
+
+
+
+####################################################################################################
+####################################################################################################
+################################################################################
+### Check accuracy_2019 on the DB from Salerno #################################
+#################################################################
+
+#### check how many TRIP ID we have ######################
+
+# get all ID terminal of Viasat data
+all_VIASAT_TRIP_IDs = pd.read_sql_query(
+    ''' SELECT "TRIP_ID" 
+        FROM public.accuracy_2019 ''', conn_HAIG)
+
+# make a list of all unique trips
+all_TRIP_IDs = list(all_VIASAT_TRIP_IDs.TRIP_ID.unique())
+
+print(len(all_VIASAT_TRIP_IDs))
+print("trip number:", len(all_TRIP_IDs))
+
+## get all terminals (unique number of vehicles)
+idterm = list((all_VIASAT_TRIP_IDs.TRIP_ID.str.split('_', expand=True)[0]).unique())
+print("vehicle number:", len(idterm))
+
+
+## reload 'all_ID_TRACKS' as list
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019.txt", "r") as file:
+    all_ID_TRACKS = eval(file.readline())
+print(len(all_ID_TRACKS))
+## make difference between all idterm and matched idterms
+all_ID_TRACKS_DIFF = list(set(all_ID_TRACKS) - set(idterm))
+print(len(all_ID_TRACKS_DIFF))
+# ## save 'all_ID_TRACKS' as list
+with open("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/all_ID_TRACKS_2019_new.txt", "w") as file:
+    file.write(str(all_ID_TRACKS_DIFF))
+
+
+
