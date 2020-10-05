@@ -164,7 +164,7 @@ stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
-## left join with "vehtype" and "portata"
+## left join with "type" and "portata"
 data <- data %>%
     left_join(idterm_vehtype_portata, by = "idterm")
 

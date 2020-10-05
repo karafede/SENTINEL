@@ -64,7 +64,7 @@ engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/
 
 ## create extension postgis on the database HAIG_Viasat_CT  (only one time)
 # erase existing table
-# cur_HAIG.execute("DROP TABLE IF EXISTS routecheck CASCADE")
+# cur_HAIG.execute("DROP TABLE IF EXISTS routecheck_2017 CASCADE")
 # conn_HAIG.commit()
 
 
@@ -145,9 +145,9 @@ def func(arg):
         # seconds
         viasat['seconds'] = viasat['timedate'].apply(lambda x: x.second)
 
-        #### select only YEAR 2019 ######
+        #### select only YEAR 2017 ######
         #################################
-        viasat = viasat[viasat.year == '2019']
+        viasat = viasat[viasat.year == '2017']
         if len(viasat) > 0:
             viasat = viasat.sort_values('timedate')
             # make one field with time in seconds
@@ -263,6 +263,8 @@ def func(arg):
                         VIASAT_TRIPS_by_ID.last_lon = VIASAT_TRIPS_by_ID.last_lon.fillna(-1)
                         VIASAT_TRIPS_by_ID.last_lat = VIASAT_TRIPS_by_ID.last_lat.fillna(-1)
                         VIASAT_TRIPS_by_ID['last_panel'] = VIASAT_TRIPS_by_ID.last_panel.astype('int')
+                        # VIASAT_TRIPS_by_ID['last_progressive'] = VIASAT_TRIPS_by_ID.progressive.shift()
+                        # VIASAT_TRIPS_by_ID.last_progressive = VIASAT_TRIPS_by_ID.last_progressive.fillna(0)
                         ## get TRIP sizes
                         # TRIP_sizes = VIASAT_TRIPS_by_ID.groupby(["TRIP_ID"]).size()
                         for idx_trip, trip in enumerate(all_TRIPS):
@@ -270,10 +272,12 @@ def func(arg):
                             VIASAT_TRIP.reset_index(drop=True, inplace=True)
                             # print(VIASAT_TRIP)
                             timeDiff = VIASAT_TRIP.totalseconds.iloc[0] - VIASAT_TRIP.last_totalseconds.iloc[0]
+                            progr = VIASAT_TRIP.progressive.iloc[0] - VIASAT_TRIP.last_progressive.iloc[0]
                             for idx_row, row in VIASAT_TRIP.iterrows():
                                 coords_1 = (row.latitude, row.longitude)
                                 coords_2 = (row.last_lat, row.last_lon)
                                 lDist = (geopy.distance.geodesic(coords_1, coords_2).km)*1000  # in meters
+
                                 ####### PANEL ###################################################
                                 if (row.panel == 1 and row.last_panel == 1):  # errore on-on
                                     s = (list(row.anomaly))
@@ -362,22 +366,26 @@ def func(arg):
                                     s = "".join(s)
                                     VIASAT_TRIP["anomaly"].iloc[idx_row] = s
                                 if (lDist > 0 and VIASAT_TRIP["anomaly"].iloc[idx_row] != "S"):
-                                    if (row.progressive/lDist < 0.9):
+                                    # if (row.progressive/lDist < 0.9):
+                                    if (progr / lDist < 0.9):
                                         s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                         s[2] = "c"
                                         s = "".join(s)
                                         VIASAT_TRIP["anomaly"].iloc[idx_row] = s
-                                    elif (row.progressive/lDist > 10 and row.progressive > 2200):
+                                    # elif (row.progressive/lDist > 10 and row.progressive > 2200):
+                                    elif (progr / lDist > 10 and progr > 2200):
                                         s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                         s[3] = "C"
                                         s = "".join(s)
                                         VIASAT_TRIP["anomaly"].iloc[idx_row] = s
-                                if (timeDiff > 0 and 3.6 * 1000 * row.progressive / timeDiff > 250):
+                                # if (timeDiff > 0 and 3.6 * 1000 * row.progressive / timeDiff > 250):
+                                if (timeDiff > 0 and 3.6 * 1000 * progr / timeDiff > 250):
                                     s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                     s[5] = "V"
                                     s = "".join(s)
                                     VIASAT_TRIP["anomaly"].iloc[idx_row] = s
-                                if (row.panel !=1 and row.progressive > 10000):
+                                # if (row.panel !=1 and row.progressive > 10000):
+                                if (row.panel != 1 and progr > 10000):
                                     s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                     s[0] = "S"
                                     s = "".join(s)
@@ -391,7 +399,8 @@ def func(arg):
                                     s[0] = "E"
                                     s = "".join(s)
                                     VIASAT_TRIP.at[len(VIASAT_TRIP) - 1, "anomaly"] = s
-                                elif (row.panel != 0 and row.progressive <= 0):
+                                # elif (row.panel != 0 and row.progressive <= 0):
+                                elif (row.panel != 0 and progr <= 0):
                                     s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                     s[6] = "d"
                                     s = "".join(s)
@@ -409,7 +418,7 @@ def func(arg):
 
                             #### Connect to database using a context manager and populate the DB ####
                             connection = engine.connect()
-                            VIASAT_TRIP.to_sql("routecheck_2019", con=connection, schema="public",
+                            VIASAT_TRIP.to_sql("routecheck_2017", con=connection, schema="public",
                                                if_exists='append')
                             connection.close()
 
@@ -423,7 +432,7 @@ def func(arg):
 
 if __name__ == '__main__':
     # pool = mp.Pool(processes=mp.cpu_count()) ## use all available processors
-    pool = mp.Pool(processes=60)     ## use 60 processors
+    pool = mp.Pool(processes=55)     ## use 60 processors
     print("++++++++++++++++ POOL +++++++++++++++++", pool)
     results = pool.map(func, [(last_track_idx, track_ID) for last_track_idx, track_ID in enumerate(all_ID_TRACKS)])
     pool.close()
@@ -464,3 +473,120 @@ conn_HAIG.commit()
 conn_HAIG.close()
 cur_HAIG.close()
 '''
+
+
+
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
+
+# viasat_september = pd.read_sql_query('''
+#                        SELECT
+#                           routecheck_2017.idterm
+#                           FROM routecheck_2017
+#                             WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                                       ''', conn_HAIG)
+# N = len(viasat_september)
+# all_idterms_18days = len(list(viasat_september.idterm.unique()))
+#
+#
+# ## select how many records we have with "grade" < 15
+# viasat_grades = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, grade
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  grade < 15 ''', conn_HAIG)
+# grades_15 = (len(viasat_grades) /N ) *100
+#
+#
+# ## select how many records we have with "grade" < 15
+# viasat_grades = pd.read_sql_query('''
+#                        SELECT
+#                           grade
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                        ''', conn_HAIG)
+#
+#
+# ## select how many records we have with "anomaly" contains "c"
+# viasat_anomaly_c = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, anomaly
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  anomaly LIKE '%c%' ''', conn_HAIG)
+# ### hom many ......
+# anomaly_c = (len(viasat_anomaly_c) / N ) *100
+#
+#
+#
+# ## select how many records we have with "anomaly" contains "C"
+# viasat_anomaly_C = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, anomaly
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  anomaly LIKE '%C%' ''', conn_HAIG)
+# ### hom many ......
+# anomaly_C = (len(viasat_anomaly_C) / N ) *100
+#
+#
+# ## select how many records we have with "anomaly" START with "E"
+# viasat_anomaly_E = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, anomaly
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  anomaly ILIKE 'E%' ''', conn_HAIG)
+# ### hom many ......
+# anomaly_E = (len(viasat_anomaly_E) / N ) *100
+#
+# ## select how many records we have with "anomaly" tha contains "T"
+# viasat_anomaly_T = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, anomaly
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  anomaly LIKE '%T%' ''', conn_HAIG)
+# ### hom many ......
+# anomaly_T = (len(viasat_anomaly_T) / N ) *100
+#
+#
+#
+# ## select how many records we have with "anomaly" that contains "V"
+# viasat_anomaly_V = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, anomaly
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  anomaly LIKE '%V%' ''', conn_HAIG)
+# ### hom many ......
+# anomaly_V = (len(viasat_anomaly_V) / N ) *100
+#
+#
+# ## select how many records we have with "anomaly" that contains "d"
+# viasat_anomaly_d = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, anomaly
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31'
+#                           AND  anomaly LIKE '%d%' ''', conn_HAIG)
+# ### hom many ......
+# anomaly_d = (len(viasat_anomaly_d) / N ) *100
+#
+#
+# ## select al TRIPS
+# all_TRIP_IDs = pd.read_sql_query('''
+#                        SELECT
+#                           idterm, "TRIP_ID"
+#                           FROM routecheck_2017
+#                           WHERE date(routecheck_2017.timedate) < '2017-09-19' and date(routecheck_2017.timedate) > '2017-08-31' ''', conn_HAIG)
+# all_TRIP_IDs = len(list(all_TRIP_IDs.TRIP_ID.unique()))
+
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
+##############################################################################################################
+

@@ -4,10 +4,10 @@ author:
 - Federico Karagulian
 date: "ultima versione `r format(Sys.time(), '%d %B %Y, %H:%M')`"
 output:
-  html_document: default
-  pdf_document: default
   word_document: 
     reference_docx: word_style_FK.docx
+  pdf_document: default
+  html_document: default
   number_sections: true
   bookdown::word_document: default
 ---
@@ -22,7 +22,7 @@ La sezione stradale lungo il tratto dell'autostrada **A2**, dove verra' installa
 
 
 ```{r, echo=FALSE, fig.cap="**Figura 1**.Postazione Tratto dell'autostrada A2 ottenuta da OpenStreetMap. Archi e nodi sono stati individuati in corrispondezna della postazione scelta da UNISA per la prova su un pesa dinamica sperimentale).", out.width = '70%'}
-knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_UNISA.png")
+knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_SENTINEL.png")
 ```
 
 *<br/><br/>*
@@ -59,7 +59,7 @@ setwd("D:/ENEA_CAS_WORK/SENTINEL/viasat_data")
 #                                    header = T, sep=",")[-1]
 
 
-data <- read.csv(paste0("FCD_2017_UNISA_2019.csv"),
+data <- read.csv(paste0("FCD_UNISA_2017.csv"),
                                    header = T, sep=",")[-1]
 
 
@@ -180,7 +180,7 @@ names(total_counts_direzione_type) <-  c("direzione", "classi", "passaggi totali
 
 
 
-Caption <- paste0("**Tabella 2.** Numero totale di passaggi di autoveicoli sul tratto dell'autostrada A2 tra il 31/08/2019 ed il 02/10/2019. Confronto tra dati **VIASAT** ed **ANAS** per lo stesso periodo temporale.")
+Caption <- paste0("**Tabella 2.** Numero totale di passaggi di autoveicoli sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017.")
 set.caption(Caption)
 panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
 panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
@@ -222,7 +222,7 @@ Come ripotato in **Tabella 3**, il mumero totale di passaggi di dati Viasat rapp
 
 frazione_pesanti_VIASAT <- mean(total_counts_direzione_type$`frazione %`[2], total_counts_direzione_type$`frazione %`[4])
 
-Caption <- paste0("**Tabella 2a.** Rilevazioni **VIASAT** per il numero totale di passaggi di auto e mezzi pesanti sul tratto dell'autostrada A2 tra il 31/08/2019 ed il 02/10/2019.")
+Caption <- paste0("**Tabella 2a.** Rilevazioni **VIASAT** per il numero totale di passaggi di auto e mezzi pesanti sul tratto dell'autostrada A2 tra il 31/08/2017 ed il 18/09/2017.")
 set.caption(Caption)
 panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
 panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
@@ -260,7 +260,7 @@ q <- ggplot(data = total_counts_direzione_type,
         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
   theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=0, vjust=1, ,hjust=0.5, size=14, face="bold")) +
-  ggtitle("Numero di passaggi totali (31 Ago.-02 Ott. 2019)") +
+  ggtitle("Numero di passaggi totali (31 Ago.-18 Sett. 2017)") +
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
 q
 
@@ -390,7 +390,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_daily,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=45, vjust=1, size=12)) +
     geom_text(aes(label = paste(norm_conteggi, "%")), size = 4, hjust = 0.5,  vjust = -0.5) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (VIASAT, 31 Ago.-02 Ott. 2019)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (VIASAT, 31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -464,7 +464,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi orari nei giorni feriali (31 Ago.-02 Ott. 2019)") + 
+    ggtitle("Numero totale di passaggi orari nei giorni feriali (31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -540,7 +540,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Numero totale di passaggi orari nei giorni festivi (31 Ago.-02 Ott. 2019)") + 
+    ggtitle("Numero totale di passaggi orari nei giorni festivi (31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
@@ -703,7 +703,7 @@ p <- ggplot(data = portata_veh,
  # ylim(0, 1200) +
    theme(axis.title.y = element_text(face="bold", colour="black", size=13),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
-  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
+  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-18 Sett. 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
 # q
 
@@ -814,7 +814,7 @@ q <- ggplot(data = portata_raw,
   geom_text(aes(x = 29000 , y = 220 , label = "26000"), size = 5) +
   theme(axis.title.y = element_text(face="bold", colour="black", size=13),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
-  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-02 Ott. 2019)") + 
+  ggtitle("Passaggi di veicoli pesanti per valore della loro portata (in kg) (31 Ago.-18 Sett. 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
 q
 
@@ -827,7 +827,7 @@ q
 
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.** Diagrammi riassuntivi per il numero di passaggi per portata e per il numero totale di superamenti dei limiti di velocità."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5a.**Percentuale di passaggi per classe di portata riferito ai veicoli pesanti."}
 
 ######################################################
 ### superamenti limite velocità veicoli pesanti ######
@@ -876,6 +876,14 @@ categories <- as.character( unique(count_superamenti$classi))
 ### plot passaggi #####
 #######################
 
+
+
+
+
+### plot passaggi #####
+#######################
+library(scales)
+
 portata_veh <- as.data.frame(portata_veh)
 portata_veh$direzione <- as.factor(portata_veh$direzione)
 
@@ -885,29 +893,76 @@ names(portata_veh)[names(portata_veh) == 'portata'] <- 'portata (kg)'
 perc_superamenti_Salerno <- summary_superamenti$perc_superamenti[1]
 perc_superamenti_Avellino <- summary_superamenti$perc_superamenti[2]
 
-q1 <- ggplot(data = portata_veh,
-            aes(direzione, conteggi, fill = `portata (kg)`)) +
-  theme_bw() +
-  geom_bar(stat = "identity", position = position_stack()) +
-  # facet_wrap( ~ direzione, ncol = 4) +
-   # guides(fill=FALSE)
-  # scale_x_discrete(limits = categories) +
-  geom_text_repel(aes(label=paste0(percentage, "%")), vjust=1, color="black",
-            position = position_stack(0.4), size=4) +
-  theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
-  theme(axis.title.x = element_blank()) +
-  ylab(expression(paste("numero di passaggi"))) +
-  xlab(expression(paste(""))) +
-  theme(axis.title.y = element_text(face="bold", colour="black", size=12),
-        axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
-  theme(axis.title.x = element_text(face="bold", colour="black", size=13),
-          axis.text.x  = element_text(angle=0, vjust=1, ,hjust=0.5, size=14, face="bold")) +
- # ggtitle("Numero totale di passaggi di veicoli pesanti (1-18 Sett. 2017)") +
-  theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
+
+
+portata_veh <- portata_veh %>% 
+  group_by(direzione) %>%
+  arrange(desc(`portata (kg)`)) %>%
+  mutate(prop = conteggi / sum(portata_veh$conteggi) *100) %>%
+  mutate(ypos = cumsum(prop)- 0.5*prop )
+
+AAA <- portata_veh %>%
+  dplyr::filter(direzione == "<-- Avellino")
+
+
+AAA <- portata_veh %>%
+  dplyr::filter(direzione == "--> Salerno")
+
+bp <- ggplot(portata_veh, aes(x="", y=prop, fill=`portata (kg)`)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0)  +
+  theme_void() + 
+  # theme(legend.position="none") +
+   theme(axis.text.x=element_blank())+
+   facet_wrap( ~ direzione, ncol = 4) +
+  theme(strip.text = element_text(size = 13)) +
+  # scale_fill_brewer("Blues") +
+  ggtitle("                                              80% dei passaggi per portata e per direzione") +
+  geom_text(aes(y = ypos, label = percentage), color = "black", size=4) +
+    scale_fill_brewer(palette="Set3")
+bp
+
+
+
+
+ 
+# portata_veh <- as.data.frame(portata_veh)
+# portata_veh$direzione <- as.factor(portata_veh$direzione)
+# 
+# portata_veh$classi <- "veicoli pesanti"
+# names(portata_veh)[names(portata_veh) == 'portata'] <- 'portata (kg)'
+# 
+# perc_superamenti_Salerno <- summary_superamenti$perc_superamenti[1]
+# perc_superamenti_Avellino <- summary_superamenti$perc_superamenti[2]
+# 
+# q1 <- ggplot(data = portata_veh,
+#             aes(direzione, conteggi, fill = `portata (kg)`)) +
+#   theme_bw() +
+#   geom_bar(stat = "identity", position = position_stack()) +
+#   # facet_wrap( ~ direzione, ncol = 4) +
+#    # guides(fill=FALSE)
+#   # scale_x_discrete(limits = categories) +
+#   geom_text_repel(aes(label=paste0(percentage, "%")), vjust=1, color="black",
+#             position = position_stack(0.4), size=4) +
+#   theme(legend.text = element_text(colour="black", size = 11, face = "bold")) +
+#   theme(axis.title.x = element_blank()) +
+#   ylab(expression(paste("numero di passaggi"))) +
+#   xlab(expression(paste(""))) +
+#   theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+#         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
+#   theme(axis.title.x = element_text(face="bold", colour="black", size=13),
+#           axis.text.x  = element_text(angle=0, vjust=1, ,hjust=0.5, size=14, face="bold")) +
+#  # ggtitle("Numero totale di passaggi di veicoli pesanti (1-18 Sett. 2017)") +
+#   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
 # q1
 
   
-  
+```  
+
+
+*<br/><br/>*
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 5b.** Numero totale di superamenti dei limiti di velocità in vigore per i veicoli pesanti."}
 
 q2 <- ggplot(data = count_superamenti,
             aes(direzione, veicoli_pesanti, fill = veicoli_pesanti)) +
@@ -925,15 +980,15 @@ q2 <- ggplot(data = count_superamenti,
         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
   theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=0, vjust=1, ,hjust=0.5, size=14, face="bold")) +
- # ggtitle("Numero totale di passaggi di veicoli pesanti (1-18 Sett. 2017)") +
+ggtitle("superamenti limite velocità (100% dei passaggi)") +
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
-# q2
+q2
 
 
 
-### final layout
-grid.arrange(q1, q2, nrow=1, ncol = 2,
-             top = textGrob("              80% dei passaggi per portata                                           superamenti limite velocità (100% dei passaggi)",gp=gpar(fontsize=13,font=3)))
+# ### final layout
+# grid.arrange(q1, q2, nrow=1, ncol = 2,
+#              top = textGrob("              80% dei passaggi per portata                                           superamenti limite velocità (100% dei passaggi)",gp=gpar(fontsize=13,font=3)))
 
 
 
@@ -1011,7 +1066,7 @@ p <- ggplot(superamenti_raw, aes(x=portata, fill=direzione)) +
     geom_text(aes(x = 30000 , y = 0.05 , label = "26000"), size = 5) +
     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
-    ggtitle("Numero di superamenti limite velocità per portata (in kg) (31 Ago.-02 Ott. 2019)") +
+    ggtitle("Numero di superamenti limite velocità per portata (in kg) (31 Ago.-18 Sett. 2017)") +
     theme(plot.title = element_text(lineheight=.8, face="bold", size = 13))
 p
 
@@ -1030,7 +1085,7 @@ p
 *<br/><br/>*
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6a.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-02 Ott.2019; Salerno)"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6a.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-18 Sett.2017; Salerno)"}
 
 # data$pois <- dpois(data$speed, lambda = mean(data$speed))
 # data$nbinom <- dnbinom(data$speed, mu = mean(data$speed), size = 1)
@@ -1073,7 +1128,7 @@ grid.arrange(plots$auto, plots$`veicoli pesanti`, nrow=1, ncol = 2,
 
 
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6b.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Avellino)"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 6b.** Distribuzione delle velocita' istantanee per classe di autoveicoli su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Avellino)"}
 
 # data$pois <- dpois(data$speed, lambda = mean(data$speed))
 # data$nbinom <- dnbinom(data$speed, mu = mean(data$speed), size = 1)
@@ -1157,6 +1212,55 @@ pander(car_fleets, emphasize.strong.cols = 1, missing = "")
 
 *<br/><br/>*
 
+
+
+
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=7, fig.cap ="**Figura 111.** Media delle velocita' medie per classe di autoveicoli muniti del dispositivo Viasat sul sul tratto SENTINEL)."}
+
+
+########################
+### summary stats ######
+########################
+
+#######################
+### Velocita' #########
+
+
+STATS_velocita <- data %>%
+  group_by(direzione,
+           vehtype) %>%
+  summarise(velocita_medie = mean(speed, na.rm = TRUE)) 
+
+STATS_velocita <- as.data.frame(STATS_velocita)
+STATS_velocita$velocita_medie <- round(STATS_velocita$velocita_medie, digits = 0)
+categories <- as.character(unique(STATS_velocita$vehtype))
+
+### plot velocita' #####
+########################
+
+q <- ggplot(data = STATS_velocita, 
+            aes(vehtype, velocita_medie, fill = vehtype)) +
+  theme_bw() +
+  facet_wrap(~direzione) +
+  geom_bar(stat = "identity")  +
+  # facet_grid(corsia ~ direzione, scales = "free", space = "free") +
+  theme(strip.text.x = element_text(size = 14, colour = "black")) +
+  guides(fill=FALSE) +
+  # scale_fill_manual(values=c("#7f7fff", "#7fbf7f", "#ff0000", "#e5e500", "#8e8e8e")) +
+  theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=0, size=12)) +
+  theme(axis.text.x=element_text(size=15,face="bold", colour = "black")) +
+  theme(axis.title.x = element_blank()) +                                     
+  ylab("velocita' (km/h)") +   
+  ylim(0, 110) +
+   theme(axis.title.y = element_text(face="bold", colour="black", size=15),
+        axis.text.y  = element_text(angle=0, vjust=0.5, size=15, colour="black")) +
+  geom_text(aes(label = paste(velocita_medie, sep = "")), size = 6, hjust = 0.5, vjust = -0.5) +
+  ggtitle("Velocita' per classi (31 Ago.-18 Set 2017)") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
+q
+
+```
+
 ## 4. Distribuzione delle velocità
 
 La distribuzione delle velocità istantanee per automobili e veicoli pesanti è rappresentata in **Figura 6a e Figura 6b**. Per entrambe le tipologie di veicoli (automobili e veicoli pesanti) si è cercato di modelizzare le distribuzioni con una curva Gaussiana. Come riportato nella **Tabella 3**, il valore medio per la distribuzione delle velocità delle automobili è stato stimato a **`r car_fleets$velocità[1]` km/h** con una deviazione standard di **`r car_fleets$velocità[2]` km/h**. Invece, per i veicoli pesanti, il valore medio per la distribuzione delle velocità è stato stimato a **`r car_fleets$velocità[3]` km/h** con una deviazione standard di **`r car_fleets$velocità[4]` km/h**. 
@@ -1164,7 +1268,7 @@ La distribuzione delle velocità istantanee per automobili e veicoli pesanti è 
 
 *<br/><br/>*
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Distribuzione delle velocità di tutti i veicoli ottenuta dal confronto di dati ANAS e FCD (Viasat) per il periodo 31 Ago.-02 Ott. 2019"}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Distribuzione delle velocità di tutti i veicoli ottenuta dal confronto di dati ANAS e FCD (Viasat) per il periodo 31 Ago.-18 Sett. 2017"}
 
 
 
@@ -1235,42 +1339,16 @@ p <- ggplot(data =velocita_ANAS,  aes((x=speed))) +
 ```
 
 
-*<br/><br/>*
-
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Tabella 3a.**"}
-
-
-# ## fit with a "gaussian/normal" distribution
-# fit_ANAS <- fitdistrplus::fitdist(velocita_ANAS$speed, "norm")
-# class(fit_ANAS) <- c("fitdist", "fitdistr") 
-# fit_ANAS <- as.data.frame(broom::tidy(fit_ANAS))
-# names(fit_ANAS) <- c("term", "veicoli ANAS", "errore ANAS" )
-# 
-# fit_ANAS <- gather(fit_ANAS,  "tipo veicolo", "velocità", 2:length(fit_ANAS)) 
-# fit_ANAS <- fit_ANAS %>%
-#   filter(`tipo veicolo` == "veicoli ANAS")
-# 
-# fit_ANAS$`velocità` <- round(fit_ANAS$`velocità`, digits = 2)
-# ### combine the data in an unique dataframe
-# all_fits <- rbind(fit_ANAS, fit_VIASAT)
-# names(all_fits) <- c("", "source data", "velocità")
-# 
-# 
-# 
-# Caption <- paste0("**Tabella 3a.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee**con una distribuzione *gaussiana*. Sono stati confrontati dati ANAS e FCD di Viasat per il periodo 31 Ago.-02 Ott. 2019. I parametri di valore medio e di deviazione standard sono riportati per tutti gli autoveicoli")
-# set.caption(Caption)
-# panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
-# panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
-# panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
-# pander(all_fits, emphasize.strong.cols = 1, missing = "")
-
-````
 
 *<br/><br/>*
 
 ## Stati del traffico (Livelli di Servizio LOS)
 
-Per convenzione, il flusso orario dei veicoli è stato calcolato su una base temporale di **15 minuti**. Tuttavia, essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale per corsia, e' stata stimata per ogni ora del giorno. Il rapporto tra il *flusso reale orario* per corsia e la *velocità media* è risultato nella stima della **densità spaziale** che è rappresentata in **Figura 8**.  
+Il volume di traffico o flusso veicolare (o anche portata veicolare): è il numero dei veicoli che passa in una determinata sezione stradale durante un intervallo di tempo. In genere, si esprime in termini: annuali [veic/anno], giornalieri [veic/giorno], orari [V60 o V = veic/h].
+
+La portata veicolare di progetto *FLUSSO di SERVIZIO* [v = veic/h]: è il massimo valore del flusso orario sotto determinate condizioni della strada e di traffico; è determinato in un intervallo di tempo inferiore all’ora e, generalmente, si utilizza un intervallo di tempo di **15 minuti**. Quindi il FLUSSO di SERVIZIO è definito come $V_{h} = 4*max(V_{15 min})$, dove $max(V_{15 min})$ rappresenta i veicoli transitati nei 15 minuti più caricati nell’ora. Invece, il *flusso reale orario* è definito come  $V_{h} = 4V_{15 min}$, dove $4V_{15 min}$ rappresenta il volume di traffico in un intervallo di 15 minuti.  
+
+Essendo i veicoli VIASAT solo una frazione dei veicoli misurati da ANAS, abbiamo stimato il conteggio dei veicoli VIASAT applicando il **fattore di rappresentatività** riportato in Tabella 2. La densità spaziale, intesa come il numero d veicoli nella sezione stradale per corsia, è stata stimata per ogni ora del giorno. Il rapporto tra il *flusso reale orario* per corsia e la *velocità media* è risultato nella stima della **densità spaziale** che è rappresentata in **Figura 8**.  
 
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 7.** Flusso per ora della giornata su un tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Salerno-Avellino)."}
@@ -1309,8 +1387,8 @@ VIASAT_STATS_passaggi_15min <- VIASAT_STATS_passaggi_hourly %>%
 VIASAT_STATS_passaggi_15min <- VIASAT_STATS_passaggi_15min %>%
   group_by(direzione, u,v, time_15) %>%
   summarise(flux = mean((count)/1.0, na.rm = TRUE))
-# CAPACITÀ: massimo volume orario di traffico in una generica sezione e in determinate condizioni operative,relativo ad un intervallo di tempo che generalmente è fissato in 15 min.
 
+# CAPACITÀ/PORTATA: massimo volume orario di traffico in una generica sezione e in determinate condizioni operative,relativo ad un intervallo di tempo che generalmente è fissato in 15 min.
 PORTATA <- ((4*max(VIASAT_STATS_passaggi_15min$flux))*100)/COEFF_PENETR
 
 
@@ -1374,7 +1452,7 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 *<br/><br/>*
 
  
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Salerno-Avellino). Per il calcolo della densita' spaziale, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno-Avellino). Per il calcolo della densita' spaziale, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
  
 ########## density ##################################
 ### il calcolo della densita' e' PER CORSIA !!! ####
@@ -1397,10 +1475,13 @@ passaggi_density <- data %>%
                mean_speed = round(mean(speed), digits = 0))
 
 
+
 density_by_day <- passaggi_density %>%
   group_by(u,v, direzione, hour) %>%
   summarize(count = mean((count)/0.25, na.rm = TRUE),
             mean_speed = mean(mean_speed))
+
+
 density_by_day <- density_by_day %>%
   left_join(lunghezza, by = c("u", "v")) 
 
@@ -1422,6 +1503,7 @@ density_by_day <- density_by_day %>%
             flux = mean(flux),
             perc_time_spent_foll = mean(perc_time_spent_foll),
             mean_speed = mean(mean_speed))
+
 
 ### flusso reale (per corsia e con fattori di correzzione)
 ### https://moodle2.units.it/pluginfile.php/101161/mod_resource/content/1/PIV_2016-2017_L03_TrafficoCapacita.pdf
@@ -1468,7 +1550,7 @@ p <- ggplot(data = density_by_day,
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
     theme(axis.text.x=element_text(size=11,face="bold", colour = "black")) +
     theme(axis.title.x = element_blank()) +                  # Remove x-axis label
-    ylab("Densità (veicoli/km)") +            # Set y-axis label
+    ylab("Densità (veicoli / km)") +            # Set y-axis label
     xlab(expression(paste(""))) +
     theme(axis.title.y = element_text(face="bold", colour="black", size=10),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=9)) +
@@ -1478,17 +1560,66 @@ p <- ggplot(data = density_by_day,
     theme(axis.title.y = element_text(face="bold", colour="black", size=12),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
-    ggtitle("Densità spaziale nella sezione stradale (31 Ago.-02 Ott. 2019)") + 
+    ggtitle("Densità spaziale nella sezione stradale (31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
+  
+
+````
+
+
+
+*<br/><br/>*
+
+ 
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 8a.** Densità spaziale (veicoli/km) stimata per ogni ora della giornata su un tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno-Avellino). Per il calcolo della densita' spaziale, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
+
+###############################################################
+### FLUSSOGRAMMA ##############################################
+###############################################################
+
+## diagramma bidimensionale flusso - velocità
+## https://www.researchgate.net/publication/313478032_ASPETTI_GENERALI_DEL_DIAGRAMMA_FONDAMENTALE_DEL_TRAFFICO
+
+
+  passaggi <- data %>%
+   group_by( hour, direzione) %>%
+    summarize(count = length(idterm),
+               mean_speed = round(mean(speed), digits = 0))
+  
+  
+  passaggi <- as.data.frame(passaggi)
+  
+  p <- ggplot(passaggi, aes(x= count, y = mean_speed)) + 
+       geom_point( color = "darkred", linetype="twodash",
+              lwd=1.5) +
+   geom_smooth() +
+    theme_bw() +
+    xlim(0, max(passaggi$count)) +
+    ylim(0, 100) +
+  facet_wrap( ~ direzione, ncol = 4) +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=12)) +
+    theme(axis.text.x=element_text(size=12, colour = "black")) +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+    xlab("flusso (veicoli/ora)") +
+    ylab("velocita' (km/h)") +
+     theme(axis.title.x = element_text(face="bold", colour="black", size=13),
+          axis.text.x  = element_text(angle=0, vjust=0.5, size=13, hjust = 0.5)) + 
+    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
+    ggtitle("andamento velocità - flusso sull'arco SENTINEL") +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 11))
+p
+
 
 ````
 
 *<br/><br/>*
 
-Il massimo valore di flusso orario, anche indicata come *portata veicolare di progetto* (veicoli/ora) è stato determinato in un intervallo di tempo di 15 minuti ed e' risultato essere **`r PORTATA` veicoli/ora**. E' stato quindi calcolato anche il **fattore dell'ora di punta** o **PHF** (Peak Hour Factor) inteso come il rapporto tra il flusso orario e la portata riferiti all’ora di punta. Considerando i conteggi VIASAT sull'arco SENTINEL, abbiamo stiamato un valore PHF di **`r PHF`**. Tale valore rientra nei valori tipici del PHF per autostrade e strade extraurbane.
+Come riportato sopra, il massimo valore di flusso orario, anche indicato come *portata veicolare di progetto* (veicoli/ora) è stato determinato in un intervallo di tempo di 15 minuti ed e' risultato essere **`r PORTATA` veicoli/ora**. È stato quindi calcolato anche il **fattore dell'ora di punta** o **PHF** (Peak Hour Factor) inteso come il rapporto tra il flusso orario e la portata riferiti all’ora di punta. Considerando i conteggi VIASAT sull'arco SENTINEL, abbiamo stimato un valore PHF di **`r PHF`**. Tale valore rientra nei valori tipici del PHF per autostrade e strade extraurbane.
 
-Per il calcolo della densita' spaziale per corsia, abbiamo calcolato il flusso orario per corsia in *condizioni reali* ($U_{R}$) che tiene conte di alcuni fattori di correzione come il *PHF*, il numero di corsie, la percentuale di veicoli pesanti ($f_{HV}$) ed il tipo di utenti ($f_{p}$). **Tabella S1** riporta le principali equazioni di riferimento usate per il calcolo del flusso orario reale e della densita' veicolare.
+Per il calcolo della densità spaziale per corsia, abbiamo calcolato il flusso orario per corsia in *condizioni reali* ($U_{R}$) che tiene conte di alcuni fattori di correzione come il *PHF*, il numero di corsie, la percentuale di veicoli pesanti ($f_{HV}$) ed il tipo di utenti ($f_{p}$). **Tabella S1** riporta le principali equazioni di riferimento usate per il calcolo del flusso orario reale e della densità veicolare.
 
 
 
@@ -1537,7 +1668,7 @@ Come mostrato in **Figura 9**, durante le ore della giornata sulla sezione strad
 
 *<br/><br/>*
 
-````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (31 Ago.-02 Ott. 2019; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, la lettera **C** indica un stato **STABILE**, le lettere **D** ed **E** indicano uno stato **INIZIALMENTE INSTABILE** ed **INSTABILE**, rispettivamente. Per il calcolo del flusso orario, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
+````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap ="**Figura 9.** FLusso orario (veicoli/ora) e stati del traffico calcolati sul tratto dell'autostrada A2 (31 Ago.-18 Sett. 2017; Salerno-Avellino). Le lettere **A** e **B** indicano uno stato **LIBERO**, la lettera **C** indica un stato **STABILE**, le lettere **D** ed **E** indicano uno stato **INIZIALMENTE INSTABILE** ed **INSTABILE**, rispettivamente. Per il calcolo del flusso orario, i conteggi sono stati aggiustati secondo il coefficiente di penetrazione rispetto ai dati ANAS."}
 
 
 
@@ -1669,7 +1800,7 @@ p <- ggplot(data = density_by_day,
     facet_wrap( ~ direzione, ncol = 4) +
     # facet_grid(direzione ~ vehtype, scales = "free", space = "free") +
     guides(fill=FALSE) +
-    # ylim(0, 1100000) +
+    ylim(0, max(density_by_day$flux)+20) +
     theme_bw() +
     theme( strip.text = element_text(size = 13)) +
     theme(axis.text.x=element_text(angle=0,hjust=1,vjust=0.5)) +
@@ -1686,7 +1817,7 @@ p <- ggplot(data = density_by_day,
           axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
     scale_x_continuous(breaks=c(0, 5, 10, 15, 20)) +
       geom_text(aes(label = paste(LOS, sep = "")), size = 4, hjust = 0.5,  vjust = -0.5) +
-    ggtitle("FLusso orario conforme ad ANAS e Livelli di Servizio (31 Ago.-02 Ott. 2019)") + 
+    ggtitle("FLusso orario conforme ad ANAS e Livelli di Servizio (31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 

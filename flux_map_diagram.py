@@ -155,7 +155,7 @@ viasat_data = pd.read_sql_query('''
                        LEFT JOIN dataraw 
                                    ON mapmatching_2019.idtrace = dataraw.id  
                                    WHERE date(mapmatching_2019.timedate) = '2019-09-02' 
-                                   AND dataraw.vehtype::bigint = 2
+                                   AND dataraw.vehtype::bigint = 1
                     ''', conn_HAIG)
 
 now2 = datetime.now()
@@ -373,7 +373,8 @@ highlight_function=lambda x: {'weight':3,
     ).add_to(my_map)
 
 
-my_map.save("traffic_all_EDGES_counts_Salerno_and_Avellino_02_Sept_2019.html")
+# my_map.save("HEAVY_traffic_all_EDGES_counts_Salerno_and_Avellino_02_Sept_2019.html")
+my_map.save("CARS_traffic_all_EDGES_counts_Salerno_and_Avellino_02_Sept_2019.html")
 
 
 ##################
