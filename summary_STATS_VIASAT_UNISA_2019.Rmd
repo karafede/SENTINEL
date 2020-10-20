@@ -84,9 +84,8 @@ data$direzione <- gsub("25844050", "--> Salerno", (data$direzione))
 data$direzione <- gsub("1110091904", "<-- Avellino", (data$direzione))
 
 
-
-mapmatching_data <- head(data[, c("direzione", "u","v", "timedate", "length", "ref", "speed", "vehtype")])
-names(mapmatching_data) <- c("direzione", "u", "v", "timedate", "length (m)", "ref", "velocità", "veicolo")
+mapmatching_data <- head(data[, c("idterm", "direzione", "u","v", "timedate", "length", "ref", "speed")])
+names(mapmatching_data) <- c("ID veicolo","direzione", "u", "v", "timedate", "length (m)", "ref", "velocità")
 
 
 Caption <- paste0("**Tabella 1.** Attributi della rete stradale OpenStreetMap associata alle traccie GPS (Viasat) di veicoli in movimento sull'autostrada A2.")
@@ -417,20 +416,20 @@ p <- ggplot(data = VIASAT_STATS_passaggi_daily,
 
 
 ## resample to 1 hour
-VIASAT_STATS_passaggi_hourly <- data %>%
+VIASAT_STATS_passaggi_hourly_feriali <- data %>%
    filter(!day %in% c("sab", "dom")) %>%
     group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
     summarize(count = length(idterm))
 
-VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+VIASAT_STATS_passaggi_hourly_feriali <- VIASAT_STATS_passaggi_hourly_feriali %>%
 mutate(day = wday(Date, label=TRUE)) %>%
   mutate(hour = hour(Date))
-VIASAT_STATS_passaggi_hourly$day <- as.factor((VIASAT_STATS_passaggi_hourly$day))
-VIASAT_STATS_passaggi_hourly$hour <- as.factor((VIASAT_STATS_passaggi_hourly$hour))
+VIASAT_STATS_passaggi_hourly_feriali$day <- as.factor((VIASAT_STATS_passaggi_hourly_feriali$day))
+VIASAT_STATS_passaggi_hourly_feriali$hour <- as.factor((VIASAT_STATS_passaggi_hourly_feriali$hour))
 
 
 # somma di tutti i tipi di conteggi per i passaggi di veicoli
-VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+VIASAT_STATS_passaggi_hourly_feriali <- VIASAT_STATS_passaggi_hourly_feriali %>%
   group_by(direzione,
            vehtype,
            hour) %>%
@@ -438,20 +437,20 @@ VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
 
 
 
-VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
+VIASAT_STATS_passaggi_hourly_feriali <- as.data.frame(VIASAT_STATS_passaggi_hourly_feriali)
  
-VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly[order(-VIASAT_STATS_passaggi_hourly$conteggi_totali),]
+VIASAT_STATS_passaggi_hourly_feriali <- VIASAT_STATS_passaggi_hourly_feriali[order(-VIASAT_STATS_passaggi_hourly_feriali$conteggi_totali),]
 
 
-VIASAT_STATS_passaggi_hourly$hour <- unfactor(VIASAT_STATS_passaggi_hourly$hour)
-VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hour)
+VIASAT_STATS_passaggi_hourly_feriali$hour <- unfactor(VIASAT_STATS_passaggi_hourly_feriali$hour)
+VIASAT_STATS_passaggi_hourly_feriali$hour <- as.numeric(VIASAT_STATS_passaggi_hourly_feriali$hour)
 
 #### plot
 
 # VIASAT_STATS_passaggi_hourly_SALERNO <- VIASAT_STATS_passaggi_hourly %>%
 #    filter(direzione == "--> Salerno") 
 
-p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
+p <- ggplot(data = VIASAT_STATS_passaggi_hourly_feriali,
               aes(hour, conteggi_totali, fill = hour)) + guides(fill=FALSE) +
     geom_bar(stat = "identity") + 
     # facet_wrap( ~ vehtype, ncol = 4) +  
@@ -494,20 +493,20 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 
 
 ## resample to 1 hour
-VIASAT_STATS_passaggi_hourly <- data %>%
+VIASAT_STATS_passaggi_hourly_festivi <- data %>%
    filter(day %in% c("sab", "dom")) %>%
     group_by(Date=floor_date(timedate, "1 hour"), direzione, vehtype) %>%
     summarize(count = length(idterm))
 
-VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+VIASAT_STATS_passaggi_hourly_festivi <- VIASAT_STATS_passaggi_hourly_festivi %>%
 mutate(day = wday(Date, label=TRUE)) %>%
   mutate(hour = hour(Date))
-VIASAT_STATS_passaggi_hourly$day <- as.factor((VIASAT_STATS_passaggi_hourly$day))
-VIASAT_STATS_passaggi_hourly$hour <- as.factor((VIASAT_STATS_passaggi_hourly$hour))
+VIASAT_STATS_passaggi_hourly_festivi$day <- as.factor((VIASAT_STATS_passaggi_hourly_festivi$day))
+VIASAT_STATS_passaggi_hourly_festivi$hour <- as.factor((VIASAT_STATS_passaggi_hourly_festivi$hour))
 
 
 # somma di tutti i tipi di conteggi per i passaggi di veicoli
-VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
+VIASAT_STATS_passaggi_hourly_festivi <- VIASAT_STATS_passaggi_hourly_festivi %>%
   group_by(direzione,
            vehtype,
            hour) %>%
@@ -515,19 +514,18 @@ VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
 
 
 
-VIASAT_STATS_passaggi_hourly <- as.data.frame(VIASAT_STATS_passaggi_hourly)
+VIASAT_STATS_passaggi_hourly_festivi <- as.data.frame(VIASAT_STATS_passaggi_hourly_festivi)
  
-VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly[order(-VIASAT_STATS_passaggi_hourly$conteggi_totali),]
+VIASAT_STATS_passaggi_hourly_festivi <- VIASAT_STATS_passaggi_hourly_festivi[order(-VIASAT_STATS_passaggi_hourly_festivi$conteggi_totali),]
 
-VIASAT_STATS_passaggi_hourly$hour <- unfactor(VIASAT_STATS_passaggi_hourly$hour)
-VIASAT_STATS_passaggi_hourly$hour <- as.numeric(VIASAT_STATS_passaggi_hourly$hour)
+VIASAT_STATS_passaggi_hourly_festivi$hour <- unfactor(VIASAT_STATS_passaggi_hourly_festivi$hour)
+VIASAT_STATS_passaggi_hourly_festivi$hour <- as.numeric(VIASAT_STATS_passaggi_hourly_festivi$hour)
 
 #### plot
 
-# VIASAT_STATS_passaggi_hourly_SALERNO <- VIASAT_STATS_passaggi_hourly %>%
-#    filter(direzione == "--> Salerno") 
 
-p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
+
+p <- ggplot(data = VIASAT_STATS_passaggi_hourly_festivi,
               aes(hour, conteggi_totali, fill = hour)) + guides(fill=FALSE) +
     geom_bar(stat = "identity") + 
     # facet_wrap( ~ vehtype, ncol = 4) +  
@@ -557,12 +555,81 @@ p <- ggplot(data = VIASAT_STATS_passaggi_hourly,
 ```
 
 
+
+
+*<br/><br/>*
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Figura S3**. Andamento del numero medio orario di passaggi di autoveicoli ssu un tratto dell'autostrada A2 (Salerno-Avellino lungo la sezione ANAS 671 (A2, Km 5+004), 31 Ago. - 17 Sett 2017). L'andamento è riportato per le due direzioni di marcia, Ascendente e Discendente."}
+
+
+### joined data (feriali + festivi)
+
+
+#### rescale to ANAS data
+VIASAT_STATS_passaggi_hourly_feriali$conteggi_totali <- round(((VIASAT_STATS_passaggi_hourly_feriali$conteggi_totali)*100)/COEFF_PENETR, digits = 0)  
+VIASAT_STATS_passaggi_hourly_festivi$conteggi_totali <- round(((VIASAT_STATS_passaggi_hourly_festivi$conteggi_totali)*100)/COEFF_PENETR, digits = 0) 
+
+
+joined_VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly_feriali %>%
+  left_join(VIASAT_STATS_passaggi_hourly_festivi, by = c("hour", "direzione", "vehtype"))
+
+
+## rename "counts" columns
+names(joined_VIASAT_STATS_passaggi_hourly)[names(joined_VIASAT_STATS_passaggi_hourly) == 'conteggi_totali.x'] <- 'conteggi_totali_feriali'
+
+names(joined_VIASAT_STATS_passaggi_hourly)[names(joined_VIASAT_STATS_passaggi_hourly) == 'conteggi_totali.y'] <- 'conteggi_totali_festivi'
+
+
+df <- joined_VIASAT_STATS_passaggi_hourly %>%
+  dplyr::select(hour, direzione, vehtype, conteggi_totali_feriali, conteggi_totali_festivi) %>%
+  gather(key = "variable", value = "value", - c(hour, direzione, vehtype) )
+
+df <- as.data.frame(df)
+
+
+
+#####################
+#### line plot ###
+#####################
+
+p <- ggplot(df, aes(x = hour, y = value)) + 
+    geom_line(aes(color = variable, linetype = variable), lwd=1) + 
+    # facet_wrap( ~ direzione, ncol = 4) +
+   # facet_grid(vehtype ~ direzione, scales = "free", space = "free") +
+    facet_grid(vehtype ~ direzione) +
+    theme_bw() +
+    scale_color_manual( values = c("black", "red")) +
+    theme( strip.text = element_text(size = 13)) +
+    theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=1, size=12)) +
+    theme(axis.text.x=element_text(size=12, colour = "black")) +
+    theme(axis.title.x = element_text(face="bold", colour="black", size=13)) +
+    xlab("ora") +
+    ylab("numero di passaggi") +
+     theme(axis.title.x = element_text(face="bold", colour="black", size=11),
+          axis.text.x  = element_text(angle=0, vjust=0.5, size=11, hjust = 0.5)) + 
+    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
+          axis.text.y  = element_text(angle=0, vjust=0.5, size=12)) +
+    ggtitle("Numero totale di passaggi orari nei giorni feriali e festivi (31 Ago.-18 Sett. 2017)") + 
+    scale_x_continuous(breaks=c(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24)) +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size = 11))
+p
+
+
+
+```
+
+
+
+
+
 *<br/><br/>*
 
 Dall'analisi dei valori di portata massima dei veicoli pesanti è stato osservato un valore minimio di 1180 kg ed un valore massimo di 39000 kg. Tuttavia, come illustrato in **Figura 5** e **Figura 6**, circa il 55% dei veicoli pesanti transitati sull'autostrada A2 ha una portata massima di **18000 kg** seguito dall'11% e dal 7.5% di transiti con veicoli con portata di **3500 kg** e **26000 kg**, rispettivamente. Quindi il maggior numero d veicoli pesanti transitati, appartiene alla categoria dei veicoli a 2 assi da 18 tonnellate (motocarri) seguita da veicoli a 3 assi da 26 tonnellate (autoreni). Tuttavia e' stato rilevato anche un numero consistente di furgono commerciali a due assi dalla portata di 3.5 tonnellate. 
 
 
 *<br/><br/>*
+
+
 
 ````{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=6,  fig.cap ="**Figura 5.** Passaggi di veicoli pesanti in relazione alla *portata* su un tratto dell'autostrada A2 (Salerno-Avellino)."}
  
@@ -876,7 +943,7 @@ count_superamenti <- data.frame(veicoli_pesanti = c(summary_superamenti$no_super
 
 count_superamenti$classi <- "veicoli pesanti"
 
-perc_superamenti <- round((sum(as.numeric(count_superamenti$perc_superamenti[3]),                           as.numeric(count_superamenti$perc_superamenti[4])))/2, digits = 0)
+perc_superamenti <- round((sum(as.numeric(summary_superamenti$perc_superamenti[1]), as.numeric(summary_superamenti$perc_superamenti[2]) ))/2, digits = 0)
 
 categories <- as.character( unique(count_superamenti$classi))
 
@@ -1107,7 +1174,7 @@ plots <- lapply(split(data_salerno, data_salerno$vehtype),FUN=function(speed_dis
     ggplot(speed_dist, aes(speed)) +
     # ggplot(aes( (mean_speed))) + 
     geom_density(alpha = 0.5) +
-    ylim(0, 0.04) +
+    ylim(0, 0.035) +
     # geom_histogram(binwidth=.05) +   ### counts
     stat_function(fun = dnorm, 
                   args = list(mean = mean(speed_dist$speed),
@@ -1160,7 +1227,7 @@ plots <- lapply(split(data_avellino, data_avellino$vehtype),FUN=function(speed_d
     # geom_line(aes(y = nbinom), col = "green") + 
     theme(axis.title.x = element_text(face="bold", colour="black", size=13),     
           axis.text.x=element_text(angle=0,hjust=0.5,vjust=0.5, size=12)) +
-    ylab("densità (u.a)") +
+    ylab("densità") +
     xlab("velocità (km/h)") +
     theme(axis.title.y = element_text(face="bold", colour="black", size=13),
           axis.text.y  = element_text(angle=0, vjust=0.5, size=13, colour="black")) +
@@ -1181,34 +1248,74 @@ grid.arrange(plots$auto, plots$`veicoli pesanti`, nrow=1, ncol = 2,
 
 
 
-# estimate paramters
+# estimate parameters
 library(MASS)
 library(fitdistrplus)
-data_car <- data %>%
-  filter(vehtype == "auto")
-data_fleet <- data %>%
-  filter(vehtype == "veicoli pesanti")
-## fit with a "gaussian/normal" distribution
-fit_cars <- fitdistrplus::fitdist(data_car$speed, "norm")
-class(fit_cars) <- c("fitdist", "fitdistr") 
-fit_cars <- as.data.frame(broom::tidy(fit_cars))
-names(fit_cars) <- c("term", "auto", "car_error" )
 
-fit_fleets  <- fitdistrplus::fitdist(data_fleet$speed, "norm")
-class(fit_fleets) <- c("fitdist", "fitdistr") 
-fit_fleets <- as.data.frame(broom::tidy(fit_fleets))
-names(fit_fleets) <- c("term", "veicoli pesanti", "fleet_error" )
+data_car_salerno <- data %>%
+  filter(vehtype == "auto",
+         direzione == "--> Salerno")
+data_car_avellino <- data %>%
+  filter(vehtype == "auto",
+         direzione == "<-- Avellino")
+
+
+data_fleet_salerno <- data %>%
+  filter(vehtype == "veicoli pesanti",
+         direzione == "--> Salerno")
+data_fleet_avellino <- data %>%
+  filter(vehtype == "veicoli pesanti",
+         direzione == "<-- Avellino")
+
+
+## fit with a "gaussian/normal" distribution
+fit_cars_salerno <- fitdistrplus::fitdist(data_car_salerno$speed, "norm")
+class(fit_cars_salerno) <- c("fitdist", "fitdistr") 
+fit_cars_salerno <- as.data.frame(broom::tidy(fit_cars_salerno))
+fit_cars_salerno$direzione <- "--> Salerno"
+names(fit_cars_salerno) <- c("term", "auto", "car_error", "direzione")
+
+fit_cars_avellino <- fitdistrplus::fitdist(data_car_avellino$speed, "norm")
+class(fit_cars_avellino) <- c("fitdist", "fitdistr") 
+fit_cars_avellino <- as.data.frame(broom::tidy(fit_cars_avellino))
+fit_cars_avellino$direzione <- "<-- Avellino"
+names(fit_cars_avellino) <- c("term", "auto", "car_error", "direzione")
+
+
+
+fit_fleets_salerno  <- fitdistrplus::fitdist(data_fleet_salerno$speed, "norm")
+class(fit_fleets_salerno) <- c("fitdist", "fitdistr") 
+fit_fleets_salerno <- as.data.frame(broom::tidy(fit_fleets_salerno))
+fit_fleets_salerno$direzione <- "--> Salerno"
+names(fit_fleets_salerno) <- c("term", "veicoli pesanti", "fleet_error", "direzione")
+
+
+fit_fleets_avellino  <- fitdistrplus::fitdist(data_fleet_avellino$speed, "norm")
+class(fit_fleets_avellino) <- c("fitdist", "fitdistr") 
+fit_fleets_avellino <- as.data.frame(broom::tidy(fit_fleets_avellino))
+fit_fleets_avellino$direzione <- "<-- Avellino"
+names(fit_fleets_avellino) <- c("term", "veicoli pesanti", "fleet_error", "direzione")
+
+
+
 ## plot
 # denscomp(ft = fit_cars, legendtext = "Normal")
 # denscomp(ft = fit_fleets, legendtext = "Normal")
 
-cars <- gather(fit_cars,  "tipo veicolo", "velocità", 2:length(fit_cars)) 
-fleets <- gather(fit_fleets, "tipo veicolo", "velocità", 2:length(fit_fleets)) 
-car_fleets <- rbind(cars, fleets)
+cars_salerno <- gather(fit_cars_salerno,  "tipo veicolo", "velocità", 2:length(fit_cars_salerno), - c(direzione)) 
+cars_avellino <- gather(fit_cars_avellino,  "tipo veicolo", "velocità", 2:length(fit_cars_avellino), - c(direzione)) 
+
+fleets_salerno <- gather(fit_fleets_salerno, "tipo veicolo", "velocità", 2:length(fit_fleets_salerno), - c(direzione)) 
+fleets_avellino <- gather(fit_fleets_avellino, "tipo veicolo", "velocità", 2:length(fit_fleets_avellino), - c(direzione)) 
+
+car_fleets <- rbind(cars_salerno,
+                    cars_avellino,
+                    fleets_salerno,
+                    fleets_avellino)
 car_fleets <- car_fleets %>%
   filter(`tipo veicolo` %in% c("auto", "veicoli pesanti"))
 car_fleets$`velocità` <- round(car_fleets$`velocità`, digits = 2)
-names(car_fleets) <- c("", "tipo veicolo", "velocità")
+names(car_fleets) <- c("", "direzione",  "tipo veicolo", "velocità")
 
 Caption <- paste0("**Tabella 3.** Parametri ottenuti dalla modellizzazione della distribuzione delle **velocità instantanee** (dati VIASAT) con una distribuzione gaussiana. I parametri di valore medio e di deviazione standard sono riportati per automobli e veicoli pesanti.")
 set.caption(Caption)
@@ -1259,12 +1366,12 @@ q <- ggplot(data = STATS_velocita,
   theme(axis.text.x=element_text(angle=0,hjust=0.5,vjust=0, size=12)) +
   theme(axis.text.x=element_text(size=15,face="bold", colour = "black")) +
   theme(axis.title.x = element_blank()) +                                     
-  ylab("velocita' (km/h)") +   
+  ylab("velocità (km/h)") +   
   ylim(0, 110) +
    theme(axis.title.y = element_text(face="bold", colour="black", size=15),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=15, colour="black")) +
   geom_text(aes(label = paste(velocita_medie, sep = "")), size = 6, hjust = 0.5, vjust = -0.5) +
-  ggtitle("Velocita' per classi (31 Ago.-18 Set 2017)") + 
+  ggtitle("Velocità per classi di veicolo (31 Ago.-18 Set 2017)") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
 q
 

@@ -256,6 +256,7 @@ conn_HAIG.commit()
 
 
 
+
 cur_HAIG.execute("""
 CREATE index routecheck_2019_lat_idx on public.routecheck_2019(latitude);
 """)
