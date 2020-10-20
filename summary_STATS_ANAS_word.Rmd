@@ -1130,7 +1130,7 @@ Come si puo' vedere dalla **Figura 5**, il numero totale di passaggi per classe 
 
 
 ## get the months of observations
-DB$month <- factor(format(DB$date, format = "%b"), levels = month.abb)
+DB$month <- factor(format(DB$date, format = "%B"))
 
 
 # get all names for speficic classes
@@ -1236,6 +1236,8 @@ q <- ggplot(data = STATS_passaggi,
   ggtitle("Numero di passaggi totali (tutti i veicoli, 31 Ago.-18 Sett. 2017)") +
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 13, hjust=0.5))
 q
+
+
 
 
 ```
@@ -2099,7 +2101,7 @@ STATS_velocita$corsia <- gsub("2","corsia 2 (--> Salerno)", (STATS_velocita$cors
 STATS_velocita$corsia <- gsub("3","corsia 3 (<-- Avellino)", (STATS_velocita$corsia))
 STATS_velocita$corsia <- gsub("4","corsia 4 (<-- Avellino)", (STATS_velocita$corsia))
 
-pattern_to_remove = paste(c("\\_conteggio\\b", "\\_altri\\b", "\\_camion__7_5m\\b", "\\_camion__7_5m_1\\b", "\\_auto_rimorchio\\b","\\_autobus\\b", "\\_moto\\b", "\\media\\b", "^deviazione_standard$", "\\media_armonica\\b" ), collapse = "|")
+pattern_to_remove = paste(c("\\_conteggio\\b", "\\_altri\\b", "\\_camion__7_5m\\b", "\\_camion__7_5m_1\\b", "\\_auto_rimorchio\\b","\\_autobus\\b", "\\_moto\\b", "\\media\\b", "^deviazione_standard$", "media_armonica" ), collapse = "|")
 
 to_keep <- as.vector( STATS_velocita$classi[-grep(pattern = pattern_to_remove , x = STATS_velocita$classi)])
 
@@ -2139,7 +2141,7 @@ q <- ggplot(data = STATS_velocita,
    theme(axis.title.y = element_text(face="bold", colour="black", size=12),
         axis.text.y  = element_text(angle=0, vjust=0.5, size=12, colour="black")) +
   geom_text(aes(label = paste(velocita_medie, sep = "")), size = 4, hjust = 0.5, vjust = -0.5) +
-  ggtitle("Velocita' per classi (31 Ago.-18 Set 2017)") + 
+  ggtitle("Velocita' per classi (31 Ago.-18 Set 2017 (ANAS A2, Km5+004)))") + 
   theme(plot.title = element_text(lineheight=.8, face="bold", size = 15))
 q
 

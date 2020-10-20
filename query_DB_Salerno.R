@@ -56,6 +56,7 @@ dbListFields(conn_HAIG, "routecheck_2019")
 dbListFields(conn_HAIG, "routecheck_2017_temp")
 dbListFields(conn_HAIG, "dataraw")
 dbListFields(conn_HAIG, "OSM_edges")
+dbListFields(conn_HAIG, "accuracy_2019")
 
 
 # idterm_portata = dbGetQuery(conn_HAIG, "
@@ -64,6 +65,7 @@ dbListFields(conn_HAIG, "OSM_edges")
 #                              LIMIT 100" )
 
 ## get all FCD data on the network section of the "Autostrada del Mediterraneo"
+## tratto ANAS 671 (A2, Km 5+004) ##
 
 # (32048592, 246509515), (246509515, 1110091820)  --> Avellino
 #  (1110091823,25844069), (25844069, 25844113)  <--- Salerno
@@ -135,6 +137,8 @@ dbListFields(conn_HAIG, "OSM_edges")
 ###################################################
 ### or just using dataraw.... #####################
 
+## tratto ANAS 671 (A2, Km 5+004) ##
+
 start_time = Sys.time()
 
 data =  dbGetQuery(conn_HAIG, "
@@ -142,7 +146,7 @@ data =  dbGetQuery(conn_HAIG, "
                             split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
                             u, v,
                             timedate, mean_speed, idtrace, sequenza
-                            FROM mapmatching_2019
+                            FROM mapmatching_2017
                            WHERE (u, v) in (VALUES (32048592, 246509515),
                            (246509515, 1110091820),
                             (1110091823,25844069), (25844069, 25844113))
@@ -164,17 +168,18 @@ stop_time = Sys.time()
 diff <- (stop_time - start_time)
 diff
 
-## left join with "type" and "portata"
+## left join with "vehtype" and "portata"
 data <- data %>%
     left_join(idterm_vehtype_portata, by = "idterm")
 
-write.csv(data, "FCD_data_speed_2019.csv")
+# write.csv(data, "FCD_data_speed_2019.csv")
+write.csv(data, "FCD_data_speed_2017.csv")
 
 min(data$timedate)
 max(data$timedate)
 
 ############################################################################################
-### tratto stradale in corrispodenza della PIASTRA UNIverista' SAlerno #####################
+### tratto stradale in corrispodenza della PIASTRA UNIverista' SALERNO #####################
 ############################################################################################
 
 ## (25844050, 1110091861) <-- Salerno
@@ -189,7 +194,7 @@ data_UNISA =  dbGetQuery(conn_HAIG, "
                             split_part(\"TRIP_ID\"::TEXT,'_', 1) idterm,
                             u, v,
                             timedate, mean_speed, idtrace, sequenza
-                            FROM mapmatching_2019
+                            FROM mapmatching_2017
                            WHERE (u, v) in (VALUES (25844050, 1110091861),
                            (1110091904, 3371747395))
                                 )
@@ -247,7 +252,7 @@ n_data <- data_UNISA %>%
 ## left join with "type" and "portata"
 data_UNISA <- data_UNISA %>%
     left_join(idterm_vehtype_portata, by = "idterm")
-write.csv(data_UNISA, "FCD_2017_UNISA_2019.csv")
+write.csv(data_UNISA, "FCD_UNISA_2017.csv")
 
 
 # data_UNISA$direzione <- as.factor(data_UNISA$u)

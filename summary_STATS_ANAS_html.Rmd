@@ -15,7 +15,7 @@ output:
 
 ## 1. Serie temporale di conteggi di veicoli
 
-Di seguito riportiamo alcune serie temporali per il conteggio dei veicoli sulle corsie dell'autostrada **A2**, sul tratto **671 (A2, Km 5+004, Latitudine = 40.7269766666667, Longitudine = 14.7757683333333)** in entrambe le direzioni: verso *Salerno* (ascendente) e verso *Avellino* (discendente). I conteggi si riferiscono al periodo **1-18 Settembre 2017** **(Figura 1a)**
+Di seguito riportiamo alcune serie temporali per il conteggio dei veicoli sulle corsie dell'autostrada **A2**, sul tratto **671 (A2, Km 5+004, Latitudine = 40.7269766666667, Longitudine = 14.7757683333333)** in entrambe le direzioni: verso *Salerno* (ascendente) e verso *Avellino* (discendente). I conteggi si riferiscono al periodo **31 Agosto-18 Settembre 2017** **(Figura 1a)**
 
 *<br/><br/>*
 
@@ -41,7 +41,7 @@ library(stringr)
 library(tidyr)
 library(readr)
 library(broom)
-library(threadr)
+# library(threadr)
 library(dplyr)
 library(dygraphs)
 library(ggpmisc)
@@ -610,7 +610,7 @@ p <- ggplot(data = STATS_passaggi_daily_SALERNO,
     theme(axis.title.x = element_text(face="bold", colour="black", size=12),
           axis.text.x  = element_text(angle=45, vjust=1, size=10)) +
     geom_text(aes(label = paste(norm_conteggi, sep = "")), size = 3, hjust = 0.5, col = "#ffffff",  vjust = 1) +
-    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (ANAS, 1-18 Sett. 2017)") + 
+    ggtitle("Numero totale di passaggi per giorno della settimana (--> Salerno) (ANAS, 31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
 
