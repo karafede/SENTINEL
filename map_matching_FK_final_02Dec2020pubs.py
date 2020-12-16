@@ -151,7 +151,6 @@ track_ID = '3503635'  ## OK
 trip = '3503635_0'
 
 
-'''
 track_ID = '3539493'  ## GOOD
 trip = '3539493_81'
 
@@ -217,9 +216,12 @@ track_ID = '4216672'   ## GOOD A2" Autostrade del Mediterraneo
 trip = '4216672_5'
 
 
-track_ID = '3505721'   ## GOOD
+track_ID = '3505721'   ## long trip on the A2 Autostrada del Mediterraneo GOOD
 trip = '3505721_0'
-'''
+
+
+# track_ID = '4362477'  #
+# trip = '4362477_conc_69'
 
 
 ################################################################################
@@ -245,25 +247,10 @@ if int(track_ID) not in idterms_fleet:
     print("+++++++ vehtype = car ++++++++++++++++")
     viasat_data = viasat_data[viasat_data.anomaly != "IQ2C4V6"]
     TRIP_ID = trip
-    # TRIP_ID = trip
     viasat = viasat_data[viasat_data.TRIP_ID == trip]
-    ## sort by 'time and date'
-    # viasat = viasat.sort_values('timedate')
-    # AAA = pd.DataFrame([])
-    ## keep FIRST & LAST point...
-    # AAA = AAA.append(viasat.iloc[0])  ## first point
-    # AAA = AAA.append(viasat.iloc[len(viasat)-1])  ## last point
-
-
-    ## GET only 50% of the data....
-    # viasat = viasat.sample(frac=0.5)
-    # viasat = AAA.append(viasat)
-    # viasat = viasat.append(AAA)
-    # viasat['index'] = viasat.index.astype('int')
 
     ## sort by 'time and date'
     viasat = viasat.sort_values('timedate')
-
     viasat.reset_index(drop=True, inplace=True)
 
     if len(viasat) > 5:
@@ -280,7 +267,7 @@ if int(track_ID) not in idterms_fleet:
         # buffer_diam_pic = 0.00004  ## this is the diamteter to show on the pics
 
         ## get extent of viasat data
-        ext = 0.025
+        ext = 0.030
         ## top-right corner
         p1 = Point(np.min(viasat.longitude)-ext, np.min(viasat.latitude)-ext)
         ## bottom-right corner
@@ -1046,19 +1033,6 @@ if int(track_ID) not in idterms_fleet:
             ### get ORIGIN and DESTINATION
             ORIGIN = max_prob_node[0]
             DESTINATION = max_prob_node[-1]
-
-            '''
-            ## arrange nodes in the consecutively (one way)
-            ### make consecutive edges...
-            lista_uv = []
-            for u, v in zip(max_prob_node, max_prob_node[1:]):
-                print(u,v)
-                tuples = (u,v)
-                lista_uv.append(tuples)
-            output = consec_sort(lista_uv)
-            ## Retrieve unique elements in list of tuples (ordered)
-            max_prob_node = [i[0] for i in output]
-            '''
 
 
             #### build matched route with all max_prob_node  #####

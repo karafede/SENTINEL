@@ -178,7 +178,7 @@ for last_track_idx, track_ID in enumerate(all_ID_TRACKS):
             buffer_diam = 0.00008   ## best choice...so far
 
             ## get extent of viasat data
-            ext = 0.025
+            ext = 0.030
             ## top-right corner
             p1 = Point(np.min(viasat.longitude)-ext, np.min(viasat.latitude)-ext)
             ## bottom-right corner
