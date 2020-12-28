@@ -29,9 +29,6 @@ knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_SENTINEL
 
 
 ```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 1.**"}
-
-
-
 rm(list = ls())
 
 library(RPostgreSQL)
@@ -54,7 +51,105 @@ options(scipen=5)
 
 
 setwd("D:/ENEA_CAS_WORK/SENTINEL/viasat_data")
+```
 
+
+*<br/><br/>*
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 0.**"}
+
+
+
+# loads the PostgreSQL driver
+drv <- dbDriver("PostgreSQL")
+
+# Connection to postdev-01 server where DB with TomTom data from Gibraltar is stored
+
+conn_HAIG <- dbConnect(drv, dbname = "HAIG_Viasat_SA",
+                       host = "10.0.0.1", port = 5432,       
+                       user = "postgres", password = "superuser")
+
+
+
+#### select some dataraw.....2019
+dataraw_2019 =  dbGetQuery(conn_HAIG, "
+                     SELECT
+                            idterm, latitude, longitude, timedate, speed,
+                            grade, panel, vehtype, progressive
+                          
+                        FROM dataraw
+                        limit 1000 ")
+
+
+#### select some routecheck....2019.
+routecheck_2019 =  dbGetQuery(conn_HAIG, "
+                     SELECT
+                            idterm, \"TRIP_ID\", idtrajectory, latitude, longitude, timedate, speed,
+                            grade, panel, vehtype, progressive, path_time
+                          
+                        FROM routecheck_2019
+                        limit 1000 ")
+## sort by TRIP_ID or by idtrajectory
+routecheck_2019 <- routecheck_2019 %>%
+  arrange(desc(-idtrajectory))
+
+# Caption <- paste0("**Tabella 00.** select some routecheck....2019_SALERNO.")
+# set.caption(Caption)
+# panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+# panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+# panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+# pander(routecheck_2019, emphasize.strong.cols = 1, missing = "")
+
+
+
+```
+
+
+*<br/><br/>*
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 0.**"}
+
+
+routecheck_2019_example_car <- routecheck_2019[53:75, ]
+  
+  
+Caption <- paste0("**Tabella 01.** select some routecheck CARS....2019_SALERNO.")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(routecheck_2019_example_car, emphasize.strong.cols = 1, missing = "")
+
+
+
+```
+
+
+*<br/><br/>*
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 0.**"}
+
+
+routecheck_2019_example_fleet <- routecheck_2019[924:944, ]
+  
+  
+Caption <- paste0("**Tabella 02.** select some routecheck CAR....2019_SALERNO.")
+set.caption(Caption)
+panderOptions("table.emphasize.rownames", FALSE) # remove row.names from the table
+panderOptions("table.split.table", Inf) # to avoid to split tables if rows are too long
+panderOptions('table.alignment.default', function(df) ifelse(sapply(df, is.numeric), 'right', 'left')) # right alignment for numeric, left otherwise
+pander(routecheck_2019_example_fleet, emphasize.strong.cols = 1, missing = "")
+
+
+
+```
+
+
+*<br/><br/>*
+
+
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 1.**"}
 # data <- read.csv(paste0("FCD_data_speed.csv"),
 #                                    header = T, sep=",")[-1]
 
@@ -1615,6 +1710,8 @@ VIASAT_STATS_passaggi_15min <- VIASAT_STATS_passaggi_hourly %>%
 VIASAT_STATS_passaggi_15min <- VIASAT_STATS_passaggi_15min %>%
   group_by(direzione, u,v, time_15) %>%
   summarise(flux = mean((count)/1.0, na.rm = TRUE))
+## from the result you can see the peak hour (ora di punta)
+
 
 # CAPACITÀ/PORTATA: massimo volume orario di traffico in una generica sezione e in determinate condizioni operative,relativo ad un intervallo di tempo che generalmente è fissato in 15 min.
 PORTATA <- ((4*max(VIASAT_STATS_passaggi_15min$flux))*100)/COEFF_PENETR
@@ -1627,7 +1724,7 @@ VIASAT_STATS_passaggi_hourly <- VIASAT_STATS_passaggi_hourly %>%
 
 
 #####------ peak hour factor - PHF ---------- #######
-### volume orario nell'ora di punta
+### volume orario
 V = (max(VIASAT_STATS_passaggi_hourly$flux)*100)/COEFF_PENETR
 PHF <- round(V/PORTATA, digits = 2)
 
