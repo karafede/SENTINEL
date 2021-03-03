@@ -28,8 +28,8 @@ def connect_HAIG_Viasat_CT():
     return(conn)
 def connect_HAIG_Viasat_SA():
     #Connect to an existing database
-    conn = psycopg2.connect(user="postgres", password="superuser", host="192.168.132.18",
-                            port="5432", database="HAIG_Viasat_SA")
-    # conn = psycopg2.connect(user="postgres", password="superuser", host="10.0.0.1",
-    #                         port="5432", database="HAIG_Viasat_SA")
+    # conn = psycopg2.connect(user="postgres", password="superuser", host="192.168.132.18",
+    #                        port="5432", database="HAIG_Viasat_SA")
+    conn = psycopg2.connect(user="postgres", password="superuser", host="10.0.0.1",
+                             port="5432", database="HAIG_Viasat_SA")
     return(conn)

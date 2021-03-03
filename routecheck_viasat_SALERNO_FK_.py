@@ -63,8 +63,8 @@ engine = sal.create_engine('postgresql://postgres:superuser@192.168.132.18:5432/
 
 
 ## create extension postgis on the database HAIG_Viasat_SA  (only one time)
-# erase existing table
-# cur_HAIG.execute("DROP TABLE IF EXISTS routecheck_2019 CASCADE")
+## erase existing table
+# cur_HAIG.execute("DROP TABLE IF EXISTS routecheck_2017 CASCADE")
 # conn_HAIG.commit()
 
 
@@ -147,7 +147,7 @@ def func(arg):
 
         #### select only YEAR 2017 ######
         #################################
-        viasat = viasat[viasat.year == '2019']
+        viasat = viasat[viasat.year == '2017']
         if len(viasat) > 0:
             viasat = viasat.sort_values('timedate')
             # make one field with time in seconds
@@ -263,8 +263,8 @@ def func(arg):
                         VIASAT_TRIPS_by_ID.last_lon = VIASAT_TRIPS_by_ID.last_lon.fillna(-1)
                         VIASAT_TRIPS_by_ID.last_lat = VIASAT_TRIPS_by_ID.last_lat.fillna(-1)
                         VIASAT_TRIPS_by_ID['last_panel'] = VIASAT_TRIPS_by_ID.last_panel.astype('int')
-                        # VIASAT_TRIPS_by_ID['last_progressive'] = VIASAT_TRIPS_by_ID.progressive.shift()
-                        # VIASAT_TRIPS_by_ID.last_progressive = VIASAT_TRIPS_by_ID.last_progressive.fillna(0)
+                        VIASAT_TRIPS_by_ID['last_progressive'] = VIASAT_TRIPS_by_ID.progressive.shift()
+                        VIASAT_TRIPS_by_ID.last_progressive = VIASAT_TRIPS_by_ID.last_progressive.fillna(0)
                         ## get TRIP sizes
                         # TRIP_sizes = VIASAT_TRIPS_by_ID.groupby(["TRIP_ID"]).size()
                         for idx_trip, trip in enumerate(all_TRIPS):
@@ -272,11 +272,11 @@ def func(arg):
                             VIASAT_TRIP.reset_index(drop=True, inplace=True)
                             # print(VIASAT_TRIP)
                             timeDiff = VIASAT_TRIP.totalseconds.iloc[0] - VIASAT_TRIP.last_totalseconds.iloc[0]
-                            # progr = VIASAT_TRIP.progressive.iloc[0] - VIASAT_TRIP.last_progressive.iloc[0]
+                            progr = VIASAT_TRIP.progressive.iloc[0] - VIASAT_TRIP.last_progressive.iloc[0]
                             for idx_row, row in VIASAT_TRIP.iterrows():
                                 coords_1 = (row.latitude, row.longitude)
                                 coords_2 = (row.last_lat, row.last_lon)
-                                lDist = (geopy.distance.geodesic(coords_1, coords_2).km)*1000  # in meters
+                                lDist = (geopy.distance.geodesic(coords_1, coords_2).km)*1000  # in meters (Euclidean distance)
 
                                 ####### PANEL ###################################################
                                 if (row.panel == 1 and row.last_panel == 1):  # errore on-on
@@ -366,26 +366,26 @@ def func(arg):
                                     s = "".join(s)
                                     VIASAT_TRIP["anomaly"].iloc[idx_row] = s
                                 if (lDist > 0 and VIASAT_TRIP["anomaly"].iloc[idx_row] != "S"):
-                                    if (row.progressive/lDist < 0.9):
-                                    # if (progr / lDist < 0.9):
+                                    # if (row.progressive/lDist < 0.9):
+                                    if (progr / lDist < 0.9):
                                         s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                         s[2] = "c"
                                         s = "".join(s)
                                         VIASAT_TRIP["anomaly"].iloc[idx_row] = s
-                                    elif (row.progressive/lDist > 10 and row.progressive > 2200):
-                                    # elif (progr / lDist > 10 and progr > 2200):
+                                    # elif (row.progressive/lDist > 10 and row.progressive > 2200):
+                                    elif (progr / lDist > 10 and progr > 2200):
                                         s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                         s[3] = "C"
                                         s = "".join(s)
                                         VIASAT_TRIP["anomaly"].iloc[idx_row] = s
-                                if (timeDiff > 0 and 3.6 * 1000 * row.progressive / timeDiff > 250):
-                                # if (timeDiff > 0 and 3.6 * 1000 * progr / timeDiff > 250):
+                                # if (timeDiff > 0 and 3.6 * 1000 * row.progressive / timeDiff > 250):
+                                if (timeDiff > 0 and 3.6 * 1000 * progr / timeDiff > 250):
                                     s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                     s[5] = "V"
                                     s = "".join(s)
                                     VIASAT_TRIP["anomaly"].iloc[idx_row] = s
-                                if (row.panel !=1 and row.progressive > 10000):
-                                # if (row.panel != 1 and progr > 10000):
+                                # if (row.panel !=1 and row.progressive > 10000):
+                                if (row.panel != 1 and progr > 10000):
                                     s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                     s[0] = "S"
                                     s = "".join(s)
@@ -399,8 +399,8 @@ def func(arg):
                                     s[0] = "E"
                                     s = "".join(s)
                                     VIASAT_TRIP.at[len(VIASAT_TRIP) - 1, "anomaly"] = s
-                                elif (row.panel != 0 and row.progressive <= 0):
-                                # elif (row.panel != 0 and progr <= 0):
+                                # elif (row.panel != 0 and row.progressive <= 0):
+                                elif (row.panel != 0 and progr <= 0):
                                     s = list(VIASAT_TRIP.iloc[idx_row].anomaly)
                                     s[6] = "d"
                                     s = "".join(s)
@@ -418,7 +418,7 @@ def func(arg):
 
                             #### Connect to database using a context manager and populate the DB ####
                             connection = engine.connect()
-                            VIASAT_TRIP.to_sql("routecheck_2019", con=connection, schema="public",
+                            VIASAT_TRIP.to_sql("routecheck_2017", con=connection, schema="public",
                                                if_exists='append')
                             connection.close()
 

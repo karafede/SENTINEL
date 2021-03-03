@@ -29,6 +29,7 @@ knitr::include_graphics("D:/ENEA_CAS_WORK/SENTINEL/viasat_data/edges_A2_SENTINEL
 
 
 ```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 1.**"}
+
 rm(list = ls())
 
 library(RPostgreSQL)
@@ -88,6 +89,7 @@ routecheck_2019 =  dbGetQuery(conn_HAIG, "
                             grade, panel, vehtype, progressive, path_time
                           
                         FROM routecheck_2019
+                        WHERE vehtype = 1
                         limit 1000 ")
 ## sort by TRIP_ID or by idtrajectory
 routecheck_2019 <- routecheck_2019 %>%
@@ -110,7 +112,7 @@ routecheck_2019 <- routecheck_2019 %>%
 ```{r, message = FALSE, echo = FALSE, warning = FALSE, fig.width=9,fig.height=5,  fig.cap = "**Tabella 0.**"}
 
 
-routecheck_2019_example_car <- routecheck_2019[53:75, ]
+routecheck_2019_example_car <- routecheck_2019[53:200, ]
   
   
 Caption <- paste0("**Tabella 01.** select some routecheck CARS....2019_SALERNO.")
@@ -946,11 +948,11 @@ p <- ggplot(data = portata_veh,
 # p
 
 
-
-
 ### get only vehicles with percetnage >1%
 portata_veh <- portata_veh %>%
   filter(percentage > 1.3)
+
+
 
 AAA <- portata_veh %>%
   group_by(direzione) %>%
@@ -1442,6 +1444,7 @@ STATS_velocita <- data %>%
            vehtype) %>%
   summarise(velocita_medie = mean(speed, na.rm = TRUE)) 
 
+
 STATS_velocita <- as.data.frame(STATS_velocita)
 STATS_velocita$velocita_medie <- round(STATS_velocita$velocita_medie, digits = 0)
 categories <- as.character(unique(STATS_velocita$vehtype))
@@ -1889,6 +1892,10 @@ p <- ggplot(data = density_by_day,
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
   
+  AAA <- density_by_day %>%
+    filter(hour >= 9 & hour <= 21) %>%
+    summarise(mean_density = mean(density))
+  
 
 ````
 
@@ -2145,6 +2152,10 @@ p <- ggplot(data = density_by_day,
     ggtitle("FLusso orario conforme ad ANAS e Livelli di Servizio (31 Ago.-18 Sett. 2017)") + 
     theme(plot.title = element_text(lineheight=.8, face="bold"))
   p
+  
+  AAA <- density_by_day %>%
+    group_by(LOS) %>%
+    summarise(count = length(LOS))
 
 ````
 

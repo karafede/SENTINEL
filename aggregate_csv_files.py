@@ -206,6 +206,10 @@ conn_HAIG.commit()
 #### ADD indices to selectd tables ########################################
 ###########################################################################
 
+##########
+## 2017 ##
+##########
+
 cur_HAIG.execute("""
 CREATE index routecheck_2017_id_idx on public.routecheck_2017("id");
 """)
@@ -220,13 +224,7 @@ conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-CREATE index routecheck_2019_id_idx on public.routecheck_2019("id");
-""")
-conn_HAIG.commit()
-
-
-cur_HAIG.execute("""
-CREATE index routecheck_2019_idterm_idx on public.routecheck_2019("idterm");
+CREATE index routecheck_2017_grade_idx on public.routecheck_2017("grade");
 """)
 conn_HAIG.commit()
 
@@ -238,7 +236,13 @@ conn_HAIG.commit()
 
 
 cur_HAIG.execute("""
-CREATE index routecheck_2019_TRIP_ID_idx on public.routecheck_2019("TRIP_ID");
+CREATE index routecheck_2017_anomaly_idx on public.routecheck_2017("anomaly");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2017_speed_idx on public.routecheck_2017("speed");
 """)
 conn_HAIG.commit()
 
@@ -248,12 +252,57 @@ CREATE index routecheck_2017_timedate_idx on public.routecheck_2017("timedate");
 """)
 conn_HAIG.commit()
 
+
+
+##########
+## 2019 ##
+##########
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_id_idx on public.routecheck_2019("id");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_idterm_idx on public.routecheck_2019("idterm");
+""")
+conn_HAIG.commit()
+
+
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_TRIP_ID_idx on public.routecheck_2019("TRIP_ID");
+""")
+conn_HAIG.commit()
+
+
+
 cur_HAIG.execute("""
 CREATE index routecheck_2019_timedate_idx on public.routecheck_2019("timedate");
 """)
 conn_HAIG.commit()
 
 
+cur_HAIG.execute("""
+CREATE index routecheck_2019_grade_idx on public.routecheck_2019("grade");
+""")
+conn_HAIG.commit()
+
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_anomaly_idx on public.routecheck_2019("anomaly");
+""")
+conn_HAIG.commit()
+
+
+cur_HAIG.execute("""
+CREATE index routecheck_2019_speed_idx on public.routecheck_2019("speed");
+""")
+conn_HAIG.commit()
 
 
 
