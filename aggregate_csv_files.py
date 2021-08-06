@@ -139,8 +139,6 @@ alter table dataraw add column geom geometry(POINT,4326)
 cur_HAIG.execute("""
 update dataraw set geom = st_setsrid(st_point(longitude,latitude),4326)
 """)
-routecheck_2017
-
 conn_HAIG.commit()
 
 '''

@@ -240,7 +240,7 @@ viasat_data = pd.read_sql_query('''
 
 
 ### FILTERING #############################################
-viasat_data = viasat_data[viasat_data.anomaly != "IQc345d"]
+# viasat_data = viasat_data[viasat_data.anomaly != "IQc345d"]
 viasat_data = viasat_data[viasat_data.anomaly != "EQc3456"]
 viasat_data = viasat_data[viasat_data.anomaly != "EQc3T5d"]
 if int(track_ID) not in idterms_fleet:
@@ -372,7 +372,9 @@ if int(track_ID) not in idterms_fleet:
         # add buffered viasat polygons
         # save first as geojson file
         buffer_pic.to_file(filename='buffer_viasat.geojson', driver='GeoJSON')
+        viasat_extent.to_file(filename='viasat_extent.geojson', driver='GeoJSON')
         # folium.GeoJson('buffer_viasat.geojson').add_to((my_map))
+        # folium.GeoJson('viasat_extent.geojson').add_to((my_map))
         # change directory
         os.chdir('D:\\ENEA_CAS_WORK\\SENTINEL\\viasat_data')
         my_map.save("matched_route_with_buffer.html")
